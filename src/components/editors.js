@@ -163,7 +163,7 @@ export function CatalogList({ selected, onToggle, exclude = [] }) {
               <Pressable key={c.id} onPress={() => onToggle(c.id)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: on ? C.accent : C.line, backgroundColor: on ? C.accentSoft : C.surface }}>
                 <View style={{ width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: on ? C.accent : C.line, backgroundColor: on ? C.accent : C.surface, alignItems: 'center', justifyContent: 'center' }}>
-                  {on ? <Text style={{ color: C.white, fontWeight: '800', fontSize: 14 }}>✓</Text> : null}
+                  {on ? <Text style={{ color: C.onAccent, fontWeight: '800', fontSize: 14 }}>✓</Text> : null}
                 </View>
                 <View style={{ flex: 1 }}>
                   <T style={{ fontWeight: '600' }}>{lang === 'ar' ? c.ar : c.en}</T>

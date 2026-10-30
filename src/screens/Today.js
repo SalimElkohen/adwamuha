@@ -31,7 +31,7 @@ function GoalRow({ goal, day, readOnly }) {
       <Pressable disabled={readOnly} onPress={() => actions.toggleMark(goal.id, day, 'd')} accessibilityRole="button" accessibilityState={{ checked: m === 'd' }}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: met ? 9 : 13, paddingHorizontal: 14 }}>
         <View style={{ width: met ? 22 : 28, height: met ? 22 : 28, borderRadius: 14, borderWidth: 2, borderColor: m === 'd' ? C.accent : m === 'x' ? C.miss : met ? C.gold : C.line, backgroundColor: m === 'd' ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: m === 'd' ? C.white : m === 'x' ? C.miss : met ? C.gold : 'transparent', fontWeight: '800', fontSize: met ? 12 : 15 }}>{m === 'x' ? '✕' : '✓'}</Text>
+          <Text style={{ color: m === 'd' ? C.onAccent : m === 'x' ? C.miss : met ? C.gold : 'transparent', fontWeight: '800', fontSize: met ? 12 : 15 }}>{m === 'x' ? '✕' : '✓'}</Text>
         </View>
         <View style={{ flex: 1 }}>
           <T style={{ fontWeight: met ? '500' : '600', color: met ? C.muted : C.ink }}>{goalTitle(goal, lang, catalogItem)}</T>

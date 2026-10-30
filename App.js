@@ -57,7 +57,7 @@ function Main() {
 
   return (
     <SafeAreaView edges={splash ? ['top', 'bottom'] : ['top', 'bottom']} style={{ flex: 1, backgroundColor: splash ? MADINAH.ivory : C.bg }}>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <View style={{ flex: 1, direction: rtl ? 'rtl' : 'ltr' }}>{body}</View>
     </SafeAreaView>
   );

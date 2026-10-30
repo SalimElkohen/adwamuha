@@ -4,6 +4,7 @@ import { C } from '../theme';
 import { useStore } from '../lib/store';
 import { T, Label, Button, Segmented, Toggle } from '../components/ui';
 import { CatalogList, GoalEditor, PeriodPicker } from '../components/editors';
+import Logo from '../components/Logo';
 import { catalogItem, goalFromCatalog } from '../data/catalog';
 import { todayKey } from '../lib/dates';
 
@@ -47,7 +48,7 @@ export default function Onboarding() {
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         {dots}
         <ScrollView contentContainerStyle={{ padding: 24, gap: 22, flexGrow: 1, justifyContent: 'center' }}>
-          <Text style={{ fontSize: 40, color: C.accent, textAlign: 'center', fontWeight: '700' }}>أدومها</Text>
+          <View style={{ alignItems: 'center' }}><Logo width={240} gold={C.gold} latin={C.ink} id="onb" /></View>
           <T center style={{ fontSize: 24, lineHeight: 30, fontWeight: '700' }}>{t('welcomeTitle')}</T>
           <T center style={{ color: C.muted }}>{t('welcomeBody')}</T>
           <View style={{ gap: 8, marginTop: 10 }}>
@@ -75,7 +76,7 @@ export default function Onboarding() {
                 <Pressable key={g.id} onPress={() => setCustom((c) => c.filter((x) => x.id !== g.id))}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: C.accent, backgroundColor: C.accentSoft }}>
                   <View style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: C.white, fontWeight: '800' }}>✓</Text>
+                    <Text style={{ color: C.onAccent, fontWeight: '800' }}>✓</Text>
                   </View>
                   <T style={{ flex: 1, fontWeight: '600' }}>{g.name}</T>
                 </Pressable>

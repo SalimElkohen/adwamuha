@@ -2,20 +2,21 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Pattern, Rect, Stop } from 'react-native-svg';
 import { useStore } from '../lib/store';
+import Logo from '../components/Logo';
 import { WELCOME } from '../data/hadith';
 
 // Welcome page in the spirit of al-Masjid an-Nabawi: ivory marble, a pointed arch
 // framing the hadith, and a faint eight-pointed star lattice on the walls.
 export const MADINAH = {
-  ivory: '#F8F3E8',
-  ivoryDeep: '#EDE3CD',
-  niche: '#FCFAF4',
-  gold: '#B8913F',
-  goldSoft: '#D9C08A',
+  ivory: '#1D6B4E', // ground: dome green (name kept for the layout code)
+  ivoryDeep: '#165840',
+  niche: '#185C43', // the niche, a shade deeper than the walls
+  gold: '#E3C277',
+  goldSoft: '#B99A55',
   dome: '#2F8A5F',
-  domeDeep: '#226B49',
-  ink: '#2A2317',
-  inkSoft: '#6B5D43',
+  domeDeep: '#F8F3E8',
+  ink: '#F8F3E8',
+  inkSoft: '#CFE0D6',
 };
 const M = MADINAH;
 
@@ -97,7 +98,7 @@ function Backdrop({ W, H, arch, t }) {
           <Stop offset="1" stopColor={M.ivoryDeep} />
         </LinearGradient>
         <Pattern id="girih" patternUnits="userSpaceOnUse" width={T} height={T}>
-          <Path d={starTile(T)} stroke={M.gold} strokeWidth={0.9} fill="none" opacity={0.32} />
+          <Path d={starTile(T)} stroke={M.gold} strokeWidth={0.9} fill="none" opacity={0.22} />
         </Pattern>
       </Defs>
       <Rect x={0} y={0} width={W} height={H} fill="url(#marble)" />
@@ -162,8 +163,12 @@ export default function Splash({ onDone }) {
     const span = xR - xL, r = span * 0.66, dy = Math.max(0, ys - (top + 6));
     const edge = dy > 0 ? xL + r - Math.sqrt(Math.max(0, r * r - dy * dy)) : xL;
     const inset = Math.max(xL + 18, edge + 12);
-    const LOGO_H = 52;
-    const logoTop = H - 40 - LOGO_H; // resting place under the arch
+    const LOGO_W = Math.min(300, (xR - xL) * 0.86); // final width in the centre
+    const LOGO_H = (LOGO_W * 190) / 330;
+    const LOGO_START = 120 / LOGO_W; // about 120 pt wide while resting at the bottom
+    // resting place under the arch, just above the "tap to continue" hint
+    const restCentre = H - 38 - (LOGO_H * LOGO_START) / 2;
+    const logoTop = restCentre - LOGO_H / 2;
     const centre = top + (yb - top) * 0.42; // optical centre of the niche
     const logoRise = centre - (logoTop + LOGO_H / 2);
     body = (
@@ -182,16 +187,15 @@ export default function Splash({ onDone }) {
           ) : null}
           <Text style={{ fontFamily: 'Amiri-Regular', fontSize: (short ? 15 : 13.5) * s, color: M.gold, textAlign: 'center', letterSpacing: ar ? 0 : 0.6 }}>{ar ? WELCOME.refAr : WELCOME.refEn}</Text>
         </Animated.View>
-        {/* the logo starts at the bottom, then rises to the centre of the arch and grows */}
+        {/* the logo is drawn at its final size and starts scaled down at the bottom, so it stays sharp as it grows */}
         <Animated.View style={{ position: 'absolute', left: 0, right: 0, top: logoTop, height: LOGO_H, alignItems: 'center', justifyContent: 'center', opacity: brand,
           transform: [
             { translateY: swap.interpolate({ inputRange: [0, 1], outputRange: [0, logoRise] }) },
-            { scale: swap.interpolate({ inputRange: [0, 1], outputRange: [1, 2.3] }) },
+            { scale: swap.interpolate({ inputRange: [0, 1], outputRange: [LOGO_START, 1] }) },
           ] }}>
-          <Text style={{ fontFamily: 'Amiri-Bold', fontSize: 24, color: M.gold, lineHeight: 34 }}>أدومها</Text>
-          <Text style={{ fontSize: 11, letterSpacing: 3.5, color: M.domeDeep, fontWeight: '600' }}>ADWAMUHĀ</Text>
+          <Logo width={LOGO_W} gold={M.gold} latin={M.ink} id="splash" />
         </Animated.View>
-        <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 18, alignItems: 'center', opacity: brand }}>
+        <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 12, alignItems: 'center', opacity: brand }}>
           <Text style={{ fontSize: 11, color: M.inkSoft, opacity: 0.7 }}>{tr('tapToContinue')}</Text>
         </Animated.View>
       </>

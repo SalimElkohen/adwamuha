@@ -28,7 +28,7 @@ export function Label({ children, style }) {
 
 export function Button({ title, onPress, kind = 'primary', disabled, style, small }) {
   const bg = kind === 'primary' ? C.accent : kind === 'danger' ? C.missSoft : C.surface;
-  const fg = kind === 'primary' ? C.white : kind === 'danger' ? C.miss : C.ink;
+  const fg = kind === 'primary' ? C.onAccent : kind === 'danger' ? C.miss : C.ink;
   return (
     <Pressable
       accessibilityRole="button"
@@ -169,7 +169,7 @@ export function Ring({ pct, size = 76, stroke = 8, color = C.accent, center, sub
 export function Sheet({ children, onClose }) {
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50 }}>
-      <Pressable onPress={onClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(20,33,27,0.35)' }} accessibilityLabel="Close" />
+      <Pressable onPress={onClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(8,30,22,0.55)' }} accessibilityLabel="Close" />
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '88%', backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingTop: 10 }}>
         <View style={{ alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: C.line, marginBottom: 6 }} />
         {children}

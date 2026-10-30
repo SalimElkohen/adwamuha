@@ -1,18 +1,22 @@
+// Green Dome palette: inspired by the green dome of the Prophet's Mosque ﷺ in Madinah —
+// deep dome green as the ground, gold for what is achieved, ivory for text.
 export const C = {
-  bg: '#F6F4EE',
-  surface: '#FFFFFF',
-  ink: '#14211B',
-  muted: '#5F6E66',
-  faint: '#8C978F',
-  line: '#E3E1D8',
-  accent: '#1D6B4E',
-  accentSoft: '#DCEFE5',
-  gold: '#A27620',
-  goldSoft: '#F4EAD3',
-  miss: '#B8433B',
-  missSoft: '#F7E2DF',
-  warn: '#C48510',
-  empty: '#EBE9E1',
+  bg: '#1D6B4E', // dome green
+  bgDeep: '#175A41',
+  surface: '#22775A', // cards, a step lighter than the ground
+  ink: '#F8F3E8', // ivory text
+  muted: '#CFE0D6',
+  faint: '#9CC2AF',
+  line: '#3A8A6A',
+  accent: '#E3C277', // gold: done, primary actions
+  onAccent: '#163F2F', // text on gold
+  accentSoft: '#356E4C', // gold-tinted green for done rows
+  gold: '#E3C277',
+  goldSoft: '#2E6A4E',
+  miss: '#F4A08F',
+  missSoft: '#5B5240',
+  warn: '#F2C14E',
+  empty: '#2C7F5F',
   white: '#FFFFFF',
 };
 
