@@ -22,7 +22,7 @@ export default function Settings() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
+      <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
         <H1 style={{ paddingTop: 4 }}>{t('tabSettings')}</H1>
 
         <Card style={{ gap: 10 }}>
@@ -94,7 +94,7 @@ export default function Settings() {
       ) : null}
       {period ? (
         <Sheet onClose={() => setPeriod(null)}>
-          <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
+          <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
             <H2>{t('setPeriod')}</H2>
             <PeriodPicker value={period} onChange={setPeriod} />
             <View style={{ flexDirection: 'row', gap: 10 }}>

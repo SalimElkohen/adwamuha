@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { C, F, R } from '../theme';
 import { useStore } from '../lib/store';
@@ -212,13 +212,13 @@ export function Ring({ pct, size = 76, stroke = 8, color = C.accent, center, sub
 // Bottom sheet used for editors and confirmations (rendered by the screen root).
 export function Sheet({ children, onClose }) {
   return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50 }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, justifyContent: 'flex-end' }}>
       <Pressable onPress={onClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(8,30,22,0.6)' }} accessibilityLabel="Close" />
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '88%', backgroundColor: C.bgDeep, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderTopWidth: 1, borderColor: C.line, paddingTop: 10 }}>
+      <View style={{ maxHeight: '88%', backgroundColor: C.bgDeep, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderTopWidth: 1, borderColor: C.line, paddingTop: 10 }}>
         <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.line, marginBottom: 6 }} />
         {children}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -137,7 +137,7 @@ export function GoalEditor({ goal, onSave, onDelete, onClose }) {
 
   return (
     <Sheet onClose={onClose}>
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         <H2>{goal ? t('editGoal') : t('newGoal')}</H2>
         <View style={{ gap: 6 }}>
           <Label style={{ marginBottom: 0 }}>{t('goalName')}</Label>
@@ -216,7 +216,7 @@ export function CatalogSheet({ onClose, onAdd }) {
   const [sel, setSel] = useState([]);
   return (
     <Sheet onClose={onClose}>
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
+      <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
         <H2>{t('addFromList')}</H2>
         <CatalogList selected={sel} exclude={have} onToggle={(id) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))} />
         <View style={{ flexDirection: 'row', gap: 10 }}>
