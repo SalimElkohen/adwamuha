@@ -43,6 +43,12 @@
           "color": "#1D6B4E"
         }
       ]
-    ]
+    ],
+    "owner": "salimelkohens-team",
+    "extra": {
+      "eas": {
+        "projectId": "f4ef2d8f-3d16-41f8-a64d-f44eb4176de7"
+      }
+    }
   }
 }
