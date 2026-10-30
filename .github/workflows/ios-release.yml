@@ -1,0 +1,24 @@
+# Builds the iPhone app on Expo's servers and uploads it to App Store Connect (TestFlight).
+# Run it from GitHub: Actions › "iOS release" › Run workflow (works from the iPhone browser).
+# Needs one repository secret: EXPO_TOKEN (from expo.dev › Account settings › Access tokens).
+name: iOS release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install dependencies
+        run: npm install
+      - name: Build on EAS and submit to App Store Connect
+        run: eas build --platform ios --profile production --non-interactive --auto-submit

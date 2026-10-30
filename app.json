@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Adwamuhā",
+    "slug": "adwamuha",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.adwamuha.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true
+      }
+    },
+    "locales": {
+      "ar": "./locales/ar.json",
+      "en": "./locales/en.json"
+    },
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Amiri-Regular.ttf",
+            "./assets/fonts/Amiri-Bold.ttf",
+            "./assets/fonts/Amiri-Italic.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F8F3E8",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 120
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1D6B4E"
+        }
+      ]
+    ]
+  }
+}

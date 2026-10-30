@@ -1,0 +1,197 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { C } from '../theme';
+import { useStore } from '../lib/store';
+import { T, Label, Button, Chip, Segmented, Stepper, Field, DateStepper, Sheet } from './ui';
+import { addDays, dayBeforeRamadan, diffDays, fmtDate, hijriText, nextHijri, HIJRI_MONTHS } from '../lib/dates';
+import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
+import { goalTitle } from '../i18n';
+
+// ---- Journey period: start + (no end | number of days | until Ramadan | date | Hijri date)
+export function PeriodPicker({ value, onChange, hijriAdjust }) {
+  const { state, t } = useStore();
+  const lang = state.lang;
+  const adj = hijriAdjust != null ? hijriAdjust : state.hijriAdjust;
+  const ramadanEnd = dayBeforeRamadan(value.start, adj);
+  const initialMode = !value.end ? 'open' : value.end === ramadanEnd ? 'ramadan' : 'days';
+  const [mode, setMode] = useState(value.mode || initialMode);
+  const [days, setDays] = useState(value.end ? diffDays(value.start, value.end) + 1 : 40);
+  const [hm, setHm] = useState(9);
+  const [hd, setHd] = useState(1);
+
+  const apply = (patch) => {
+    const v = { ...value, ...patch };
+    const m = patch.mode || mode;
+    let end = v.end;
+    if (m === 'open') end = null;
+    if (m === 'days') end = addDays(v.start, (patch.days || days) - 1);
+    if (m === 'ramadan') end = dayBeforeRamadan(v.start, adj);
+    if (m === 'date') end = v.end && v.end >= v.start ? v.end : addDays(v.start, 29);
+    if (m === 'hijri') {
+      const k = nextHijri(patch.hm || hm, patch.hd || hd, addDays(v.start, 1), adj);
+      end = k;
+    }
+    onChange({ start: v.start, end });
+  };
+
+  // re-compute Ramadan / Hijri end dates when the Hijri calendar setting changes
+  const firstAdj = useRef(true);
+  useEffect(() => {
+    if (firstAdj.current) { firstAdj.current = false; return; }
+    if (mode === 'ramadan' || mode === 'hijri') apply({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adj]);
+
+  const modes = [
+    { value: 'open', label: t('openEnded') },
+    { value: 'days', label: t('numberOfDays') },
+    { value: 'ramadan', label: t('untilRamadan') },
+    { value: 'date', label: t('untilDate') },
+    { value: 'hijri', label: t('untilHijri') },
+  ];
+
+  return (
+    <View style={{ gap: 18 }}>
+      <View>
+        <Label>{t('startDate')}</Label>
+        <DateStepper value={value.start} onChange={(k) => apply({ start: k })} />
+      </View>
+      <View>
+        <Label>{t('endDate')}</Label>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {modes.map((m) => (
+            <Chip key={m.value} label={m.label} active={mode === m.value} onPress={() => { setMode(m.value); apply({ mode: m.value }); }} />
+          ))}
+        </View>
+        <View style={{ marginTop: 14, gap: 10 }}>
+          {mode === 'days' ? (
+            <Stepper value={days} min={1} max={400} suffix={t('days')} onChange={(n) => { setDays(n); apply({ days: n }); }} />
+          ) : null}
+          {mode === 'date' ? <DateStepper value={value.end || addDays(value.start, 29)} min={value.start} onChange={(k) => onChange({ start: value.start, end: k })} /> : null}
+          {mode === 'hijri' ? (
+            <View style={{ gap: 10 }}>
+              <T style={{ fontSize: 13, color: C.muted }}>{t('month')}</T>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {HIJRI_MONTHS[lang === 'ar' ? 'ar' : 'en'].map((name, i) => (
+                  <Chip key={name} label={name} active={hm === i + 1} onPress={() => { setHm(i + 1); apply({ hm: i + 1 }); }} />
+                ))}
+              </View>
+              <T style={{ fontSize: 13, color: C.muted }}>{t('dayOfMonth')}</T>
+              <Stepper value={hd} min={1} max={30} onChange={(n) => { setHd(n); apply({ hd: n }); }} />
+            </View>
+          ) : null}
+          {value.end ? (
+            <View style={{ backgroundColor: C.goldSoft, borderRadius: 12, padding: 12 }}>
+              <T style={{ fontWeight: '600' }}>{fmtDate(value.end, lang, { weekday: true, year: true })}</T>
+              <T style={{ color: C.gold, fontSize: 14 }}>{hijriText(value.end, lang, adj)} · {diffDays(value.start, value.end) + 1} {t('days')}</T>
+            </View>
+          ) : null}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ---- Goal editor (new or existing)
+export function GoalEditor({ goal, onSave, onDelete, onClose }) {
+  const { state, t } = useStore();
+  const lang = state.lang;
+  const startName = goal ? goalTitle(goal, lang, catalogItem) : '';
+  const cat = goal && goal.catalogId ? catalogItem(goal.catalogId) : null;
+  const [name, setName] = useState(startName);
+  const [freq, setFreq] = useState(goal ? goal.freq : 'daily');
+  const [perWeek, setPerWeek] = useState(goal && goal.perWeek ? goal.perWeek : 3);
+  const [target, setTarget] = useState(goal ? goal.target || '' : '');
+  const [unit, setUnit] = useState(goal ? goal.unit || (cat ? (lang === 'ar' ? cat.unitAr : cat.unitEn) || '' : '') : '');
+
+  const save = () => {
+    const n = name.trim();
+    if (!n) return;
+    const patch = { freq, perWeek: freq === 'weekly' ? perWeek : null, target: target.trim(), unit: unit.trim() || null };
+    if (!goal || n !== startName) { patch.name = n; patch.catalogId = null; patch.title = null; }
+    onSave(patch);
+  };
+
+  return (
+    <Sheet onClose={onClose}>
+      <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        <T style={{ fontSize: 20, fontWeight: '700' }}>{goal ? t('editGoal') : t('newGoal')}</T>
+        <View style={{ gap: 6 }}>
+          <Label style={{ marginBottom: 0 }}>{t('goalName')}</Label>
+          <Field value={name} onChangeText={setName} placeholder={t('goalNamePh')} />
+        </View>
+        <View style={{ gap: 8 }}>
+          <Label style={{ marginBottom: 0 }}>{t('frequency')}</Label>
+          <Segmented value={freq} onChange={setFreq} options={[{ value: 'daily', label: t('daily') }, { value: 'weekly', label: t('timesPerWeek') }]} />
+          {freq === 'weekly' ? <Stepper value={perWeek} min={1} max={6} onChange={setPerWeek} suffix="× / 7" /> : null}
+        </View>
+        <View style={{ gap: 6 }}>
+          <Label style={{ marginBottom: 0 }}>{t('target')}</Label>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Field value={String(target)} onChangeText={setTarget} placeholder={t('targetPh')} style={{ flex: 1 }} />
+            <Field value={unit} onChangeText={setUnit} placeholder={t('unitPh')} style={{ flex: 2 }} />
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
+          <Button title={t('cancel')} kind="secondary" onPress={onClose} style={{ flex: 1 }} />
+          <Button title={t('save')} onPress={save} disabled={!name.trim()} style={{ flex: 1 }} />
+        </View>
+        {goal && onDelete ? <Button title={t('delete')} kind="danger" onPress={onDelete} /> : null}
+      </ScrollView>
+    </Sheet>
+  );
+}
+
+// ---- Catalog list with check marks (used in onboarding and settings)
+export function CatalogList({ selected, onToggle, exclude = [] }) {
+  const { state, t } = useStore();
+  const lang = state.lang;
+  const groups = [
+    { key: 'muslim', title: t('muslimPack') },
+    { key: 'life', title: t('lifePack') },
+  ];
+  return (
+    <View style={{ gap: 18 }}>
+      {groups.map((g) => (
+        <View key={g.key} style={{ gap: 8 }}>
+          <Label style={{ marginBottom: 2 }}>{g.title}</Label>
+          {CATALOG.filter((c) => c.pack === g.key && !exclude.includes(c.id)).map((c) => {
+            const on = selected.includes(c.id);
+            const unit = lang === 'ar' ? c.unitAr : c.unitEn;
+            const sub = [c.target ? c.target + (unit ? ' ' + unit : '') : null, c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
+            return (
+              <Pressable key={c.id} onPress={() => onToggle(c.id)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: on ? C.accent : C.line, backgroundColor: on ? C.accentSoft : C.surface }}>
+                <View style={{ width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: on ? C.accent : C.line, backgroundColor: on ? C.accent : C.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  {on ? <Text style={{ color: C.white, fontWeight: '800', fontSize: 14 }}>✓</Text> : null}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <T style={{ fontWeight: '600' }}>{lang === 'ar' ? c.ar : c.en}</T>
+                  <T style={{ fontSize: 13, color: C.muted }}>{sub}</T>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+export function CatalogSheet({ onClose, onAdd }) {
+  const { state, t } = useStore();
+  const have = useMemo(() => state.goals.filter((g) => !g.archived && !g.challengeId && g.catalogId).map((g) => g.catalogId), [state.goals]);
+  const [sel, setSel] = useState([]);
+  return (
+    <Sheet onClose={onClose}>
+      <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
+        <T style={{ fontSize: 20, fontWeight: '700' }}>{t('addFromList')}</T>
+        <CatalogList selected={sel} exclude={have} onToggle={(id) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))} />
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Button title={t('cancel')} kind="secondary" onPress={onClose} style={{ flex: 1 }} />
+          <Button title={t('addGoal')} disabled={!sel.length} onPress={() => onAdd(sel.map((id) => goalFromCatalog(catalogItem(id))))} style={{ flex: 1 }} />
+        </View>
+      </ScrollView>
+    </Sheet>
+  );
+}
