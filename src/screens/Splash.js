@@ -96,6 +96,7 @@ function Backdrop({ W, H, arch }) {
 export default function Splash({ onDone }) {
   const { state, t } = useStore();
   const ar = state.lang === 'ar';
+  const short = WELCOME.ar.length < 70; // a short hadith gets larger type
   const [size, setSize] = useState(null);
   const fade = useRef(new Animated.Value(0)).current;
 
@@ -122,17 +123,17 @@ export default function Splash({ onDone }) {
     body = (
       <>
         <Backdrop W={W} H={H} arch={arch} />
-        <Animated.View style={{ position: 'absolute', left: inset, right: inset, top, bottom: H - yb + 14, justifyContent: 'center', gap: 14 * s, opacity: fade }}>
-          <Text style={{ fontFamily: 'Amiri-Regular', fontSize: 23 * s, lineHeight: 46 * s, color: M.ink, textAlign: 'center', writingDirection: 'rtl' }}>{WELCOME.ar}</Text>
+        <Animated.View style={{ position: 'absolute', left: inset, right: inset, top, bottom: H - yb + 14, justifyContent: 'center', gap: (short ? 20 : 14) * s, opacity: fade }}>
+          <Text style={{ fontFamily: 'Amiri-Regular', fontSize: (short ? 32 : 23) * s, lineHeight: (short ? 62 : 46) * s, color: M.ink, textAlign: 'center', writingDirection: 'rtl' }}>{WELCOME.ar}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <View style={{ width: 34, height: 1, backgroundColor: M.goldSoft }} />
             <View style={{ width: 7, height: 7, backgroundColor: M.gold, transform: [{ rotate: '45deg' }] }} />
             <View style={{ width: 34, height: 1, backgroundColor: M.goldSoft }} />
           </View>
           {!ar ? (
-            <Text style={{ fontFamily: 'Amiri-Italic', fontSize: 15.5 * s, lineHeight: 23 * s, color: M.inkSoft, textAlign: 'center' }}>“{WELCOME.en}”</Text>
+            <Text style={{ fontFamily: 'Amiri-Italic', fontSize: (short ? 18 : 15.5) * s, lineHeight: (short ? 27 : 23) * s, color: M.inkSoft, textAlign: 'center' }}>“{WELCOME.en}”</Text>
           ) : null}
-          <Text style={{ fontFamily: 'Amiri-Regular', fontSize: 13.5 * s, color: M.gold, textAlign: 'center', letterSpacing: ar ? 0 : 0.6 }}>{ar ? WELCOME.refAr : WELCOME.refEn}</Text>
+          <Text style={{ fontFamily: 'Amiri-Regular', fontSize: (short ? 15 : 13.5) * s, color: M.gold, textAlign: 'center', letterSpacing: ar ? 0 : 0.6 }}>{ar ? WELCOME.refAr : WELCOME.refEn}</Text>
         </Animated.View>
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: 20, alignItems: 'center', gap: 2 }}>
           <Text style={{ fontFamily: 'Amiri-Bold', fontSize: 24, color: M.gold, lineHeight: 34 }}>أدومها</Text>
