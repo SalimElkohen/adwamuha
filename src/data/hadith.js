@@ -4,6 +4,8 @@
 // English renderings are meaning-based translations, still to be reviewed.
 
 export const WELCOME = {
+  introAr: 'قال رسول الله ﷺ:',
+  introEn: 'The Messenger of Allah ﷺ said:',
   ar: 'أَحَبُّ الأعمالِ إلى اللهِ أدْومُها وإن قَلَّ',
   en: 'The most beloved deed to Allah is the most regular and constant, even if it is little.',
   refEn: 'Sahih Muslim 783',
