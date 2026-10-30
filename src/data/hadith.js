@@ -4,12 +4,12 @@
 // English renderings are meaning-based translations, still to be reviewed.
 
 export const WELCOME = {
-  ar: 'سَدِّدوا وقارِبوا، واعلموا أنه لن يُدخِلَ أحدَكم عملُه الجنَّةَ، وأنَّ أحبَّ الأعمالِ إلى الله أدومُها وإن قَلَّ',
-  en: 'Do good deeds properly, sincerely and moderately, and know that your deeds will not make you enter Paradise, and that the most beloved deed to Allah is the most regular and constant, even if it were little.',
-  refEn: 'Al-Bukhari 6464 · Muslim 2818',
-  refAr: 'رواه البخاري ومسلم',
+  ar: 'أَحَبُّ الأعمالِ إلى اللهِ أدْومُها وإن قَلَّ',
+  en: 'The most beloved deed to Allah is the most regular and constant, even if it is little.',
+  refEn: 'Sahih Muslim 783',
+  refAr: 'صحيح مسلم ٧٨٣',
   grade: 'صحيح',
-  dorar: 'https://dorar.net/hadith/sharh/92041',
+  dorar: 'https://dorar.net/hadith/sharh/113728',
 };
 
 export const HADITH = [
