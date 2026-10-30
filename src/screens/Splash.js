@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Pressable, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Pattern, Rect, Stop } from 'react-native-svg';
 import { useStore } from '../lib/store';
 import { WELCOME } from '../data/hadith';
@@ -55,6 +55,19 @@ function archRise(span, k = 0.66) {
   return Math.sqrt(r * r - (r - span / 2) * (r - span / 2));
 }
 
+// length of the outline drawn by archPath (sides, both arcs, and the closing base)
+function archLength(xL, xR, ys, yb, k = 0.66) {
+  const span = xR - xL, r = span * k;
+  const alpha = Math.acos((r - span / 2) / r);
+  return 2 * (yb - ys) + 2 * r * alpha + span;
+}
+
+// The opening sequence, in milliseconds.
+export const INTRO = { total: 2300, pattern: [0, 700], arch: [200, 1300], inner: [450, 1300], fill: [700, 800], star: [1300, 450], text: 1400, brand: 1800 };
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const ease = (v) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
+const phase = (t, [start, dur]) => ease(clamp01((t - start) / dur));
+
 function rosette(cx, cy, R) {
   const r = R * 0.765;
   let d = '';
@@ -66,12 +79,14 @@ function rosette(cx, cy, R) {
   return d + 'Z';
 }
 
-function Backdrop({ W, H, arch }) {
+function Backdrop({ W, H, arch, t }) {
   const T = Math.round(Math.max(40, W / 9));
   const { xL, xR, ys, yb } = arch;
   const outer = archPath(xL, xR, ys, yb);
   const inner = archPath(xL + 8, xR - 8, ys, yb - 8);
+  const Lo = archLength(xL, xR, ys, yb), Li = archLength(xL + 8, xR - 8, ys, yb - 8);
   const cx = W / 2;
+  const pa = phase(t, INTRO.arch), pi = phase(t, INTRO.inner);
   return (
     <Svg width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
       <Defs>
@@ -84,27 +99,46 @@ function Backdrop({ W, H, arch }) {
         </Pattern>
       </Defs>
       <Rect x={0} y={0} width={W} height={H} fill="url(#marble)" />
-      <Rect x={0} y={0} width={W} height={H} fill="url(#girih)" />
-      {/* the niche */}
-      <Path d={outer.d} fill={M.niche} stroke={M.gold} strokeWidth={1.6} />
-      <Path d={inner.d} fill="none" stroke={M.goldSoft} strokeWidth={0.9} />
-      <Path d={rosette(cx, outer.ya + (ys - outer.ya) * 0.24, 9)} fill="none" stroke={M.gold} strokeWidth={1} />
+      <Rect x={0} y={0} width={W} height={H} fill="url(#girih)" opacity={phase(t, INTRO.pattern)} />
+      {/* the niche fills in while its gold outline draws itself */}
+      <Path d={outer.d} fill={M.niche} fillOpacity={phase(t, INTRO.fill)} stroke="none" />
+      <Path d={outer.d} fill="none" stroke={M.gold} strokeWidth={1.6} strokeDasharray={`${Lo} ${Lo}`} strokeDashoffset={Lo * (1 - pa)} />
+      <Path d={inner.d} fill="none" stroke={M.goldSoft} strokeWidth={0.9} strokeDasharray={`${Li} ${Li}`} strokeDashoffset={Li * (1 - pi)} />
+      <Path d={rosette(cx, outer.ya + (ys - outer.ya) * 0.24, 9)} fill="none" stroke={M.gold} strokeWidth={1} opacity={phase(t, INTRO.star)} />
     </Svg>
   );
 }
 
 export default function Splash({ onDone }) {
-  const { state, t } = useStore();
+  const { state, t: tr } = useStore();
   const ar = state.lang === 'ar';
   const short = WELCOME.ar.length < 70; // a short hadith gets larger type
   const [size, setSize] = useState(null);
   const fade = useRef(new Animated.Value(0)).current;
+  const brand = useRef(new Animated.Value(0)).current;
+  const [t, setT] = useState(0); // time into the opening sequence, ms
 
   useEffect(() => {
-    Animated.timing(fade, { toValue: 1, duration: 900, delay: 250, useNativeDriver: true }).start();
+    let raf, alive = true;
+    const run = (reduce) => {
+      if (!alive) return;
+      if (reduce) { setT(INTRO.total); fade.setValue(1); brand.setValue(1); return; }
+      const t0 = Date.now();
+      const tick = () => {
+        if (!alive) return;
+        const now = Date.now() - t0;
+        setT(Math.min(now, INTRO.total));
+        if (now < INTRO.total) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+      Animated.timing(fade, { toValue: 1, duration: 900, delay: INTRO.text, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+      Animated.timing(brand, { toValue: 1, duration: 700, delay: INTRO.brand, useNativeDriver: true }).start();
+    };
+    Promise.resolve(AccessibilityInfo && AccessibilityInfo.isReduceMotionEnabled ? AccessibilityInfo.isReduceMotionEnabled() : false)
+      .then(run, () => run(false));
     const id = setTimeout(onDone, 8000);
-    return () => clearTimeout(id);
-  }, [onDone, fade]);
+    return () => { alive = false; cancelAnimationFrame(raf); clearTimeout(id); };
+  }, [onDone, fade, brand]);
 
   let body = null;
   if (size) {
@@ -122,8 +156,8 @@ export default function Splash({ onDone }) {
     const inset = Math.max(xL + 18, edge + 12);
     body = (
       <>
-        <Backdrop W={W} H={H} arch={arch} />
-        <Animated.View style={{ position: 'absolute', left: inset, right: inset, top, bottom: H - yb + 14, justifyContent: 'center', gap: (short ? 20 : 14) * s, opacity: fade }}>
+        <Backdrop W={W} H={H} arch={arch} t={t} />
+        <Animated.View style={{ position: 'absolute', left: inset, right: inset, top, bottom: H - yb + 14, justifyContent: 'center', gap: (short ? 20 : 14) * s, opacity: fade, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }}>
           <Text style={{ fontFamily: 'Amiri-Regular', fontSize: (short ? 32 : 23) * s, lineHeight: (short ? 62 : 46) * s, color: M.ink, textAlign: 'center', writingDirection: 'rtl' }}>{WELCOME.ar}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <View style={{ width: 34, height: 1, backgroundColor: M.goldSoft }} />
@@ -135,17 +169,17 @@ export default function Splash({ onDone }) {
           ) : null}
           <Text style={{ fontFamily: 'Amiri-Regular', fontSize: (short ? 15 : 13.5) * s, color: M.gold, textAlign: 'center', letterSpacing: ar ? 0 : 0.6 }}>{ar ? WELCOME.refAr : WELCOME.refEn}</Text>
         </Animated.View>
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 20, alignItems: 'center', gap: 2 }}>
+        <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 20, alignItems: 'center', gap: 2, opacity: brand }}>
           <Text style={{ fontFamily: 'Amiri-Bold', fontSize: 24, color: M.gold, lineHeight: 34 }}>أدومها</Text>
           <Text style={{ fontSize: 11, letterSpacing: 3.5, color: M.domeDeep, fontWeight: '600' }}>ADWAMUHĀ</Text>
-          <Text style={{ fontSize: 11, color: M.inkSoft, opacity: 0.7, marginTop: 8 }}>{t('tapToContinue')}</Text>
-        </View>
+          <Text style={{ fontSize: 11, color: M.inkSoft, opacity: 0.7, marginTop: 8 }}>{tr('tapToContinue')}</Text>
+        </Animated.View>
       </>
     );
   }
 
   return (
-    <Pressable onPress={onDone} accessibilityLabel={t('tapToContinue')} style={{ flex: 1, backgroundColor: M.ivory }}>
+    <Pressable onPress={onDone} accessibilityLabel={tr('tapToContinue')} style={{ flex: 1, backgroundColor: M.ivory }}>
       <View style={{ flex: 1 }} onLayout={(e) => setSize(e.nativeEvent.layout)}>{body}</View>
     </Pressable>
   );
