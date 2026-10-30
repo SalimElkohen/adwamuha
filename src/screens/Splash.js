@@ -3,6 +3,7 @@ import { AccessibilityInfo, Animated, Easing, Pressable, Text, View } from 'reac
 import Svg, { Defs, LinearGradient, Path, Pattern, Rect, Stop } from 'react-native-svg';
 import { useStore } from '../lib/store';
 import Logo from '../components/Logo';
+import { ZelligeTile } from '../components/Lattice';
 import { WELCOME } from '../data/hadith';
 
 // Welcome page in the spirit of al-Masjid an-Nabawi: ivory marble, a pointed arch
@@ -19,27 +20,6 @@ export const MADINAH = {
   inkSoft: '#CFE0D6',
 };
 const M = MADINAH;
-
-// One tile of the lattice: an eight-pointed star (two squares) with spokes to the tile edges.
-function starTile(T) {
-  const c = T / 2, R = T * 0.3, r = R * 0.765;
-  let d = '';
-  for (let k = 0; k < 16; k++) {
-    const a = (Math.PI / 8) * k - Math.PI / 2;
-    const rad = k % 2 === 0 ? R : r;
-    d += (k === 0 ? 'M' : 'L') + (c + rad * Math.cos(a)).toFixed(2) + ' ' + (c + rad * Math.sin(a)).toFixed(2) + ' ';
-  }
-  d += 'Z ';
-  // spokes from the star tips to edge midpoints and corners, so tiles join into one lattice
-  for (let k = 0; k < 8; k++) {
-    const a = (Math.PI / 4) * k - Math.PI / 2;
-    const x1 = c + R * Math.cos(a), y1 = c + R * Math.sin(a);
-    const x2 = k % 2 === 0 ? c + c * Math.round(Math.cos(a)) : c + c * Math.sign(Math.cos(a));
-    const y2 = k % 2 === 0 ? c + c * Math.round(Math.sin(a)) : c + c * Math.sign(Math.sin(a));
-    d += 'M' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' L' + x2.toFixed(2) + ' ' + y2.toFixed(2) + ' ';
-  }
-  return d;
-}
 
 // Pointed (two-centred) arch: straight sides from the bottom up to the springing line,
 // then two arcs meeting at the apex.
@@ -83,7 +63,7 @@ function rosette(cx, cy, R) {
 }
 
 function Backdrop({ W, H, arch, t }) {
-  const T = Math.round(Math.max(40, W / 9));
+  const T = Math.round(Math.max(44, W / 8));
   const { xL, xR, ys, yb } = arch;
   const outer = archPath(xL, xR, ys, yb);
   const inner = archPath(xL + 8, xR - 8, ys, yb - 8);
@@ -98,7 +78,7 @@ function Backdrop({ W, H, arch, t }) {
           <Stop offset="1" stopColor={M.ivoryDeep} />
         </LinearGradient>
         <Pattern id="girih" patternUnits="userSpaceOnUse" width={T} height={T}>
-          <Path d={starTile(T)} stroke={M.gold} strokeWidth={0.9} fill="none" opacity={0.22} />
+          <ZelligeTile T={T} gold={M.gold} bg={M.ivory} opacity={0.3} />
         </Pattern>
       </Defs>
       <Rect x={0} y={0} width={W} height={H} fill="url(#marble)" />

@@ -45,7 +45,7 @@ export default function Onboarding() {
 
   if (step === 0) {
     return (
-      <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <View style={{ flex: 1 }}>
         {dots}
         <ScrollView contentContainerStyle={{ padding: 24, gap: 22, flexGrow: 1, justifyContent: 'center' }}>
           <View style={{ alignItems: 'center' }}><Logo width={240} gold={C.gold} latin={C.ink} id="onb" /></View>
@@ -63,7 +63,7 @@ export default function Onboarding() {
 
   if (step === 1) {
     return (
-      <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <View style={{ flex: 1 }}>
         {dots}
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 30 }}>
           <T style={{ fontSize: 26, lineHeight: 32, fontWeight: '700' }}>{t('pickGoals')}</T>
@@ -101,7 +101,7 @@ export default function Onboarding() {
 
   if (step === 2) {
     return (
-      <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <View style={{ flex: 1 }}>
         {dots}
         <ScrollView contentContainerStyle={{ padding: 20, gap: 18, paddingBottom: 30 }}>
           <T style={{ fontSize: 26, lineHeight: 32, fontWeight: '700' }}>{t('setPeriod')}</T>
@@ -118,7 +118,7 @@ export default function Onboarding() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <View style={{ flex: 1 }}>
       {dots}
       <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 30 }}>
         <T style={{ fontSize: 26, lineHeight: 32, fontWeight: '700' }}>{t('remindersTitle')}</T>

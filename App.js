@@ -5,6 +5,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StoreProvider, useStore } from './src/lib/store';
 import { scheduleReminders } from './src/lib/notify';
 import { C } from './src/theme';
+import Lattice from './src/components/Lattice';
 import Splash, { MADINAH } from './src/screens/Splash';
 import Onboarding from './src/screens/Onboarding';
 import Today from './src/screens/Today';
@@ -58,6 +59,7 @@ function Main() {
   return (
     <SafeAreaView edges={splash ? ['top', 'bottom'] : ['top', 'bottom']} style={{ flex: 1, backgroundColor: splash ? MADINAH.ivory : C.bg }}>
       <StatusBar style="light" />
+      {!splash ? <Lattice /> : null}
       <View style={{ flex: 1, direction: rtl ? 'rtl' : 'ltr' }}>{body}</View>
     </SafeAreaView>
   );
