@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C } from '../theme';
 import { useStore } from '../lib/store';
-import { T, H1, Label, Button, Card, Divider, Segmented, Toggle } from '../components/ui';
+import { T, H1, Label, Button, Card, Divider, Segmented, RadioList, Toggle } from '../components/ui';
 import { CatalogList, GoalEditor, PeriodPicker } from '../components/editors';
 import Logo from '../components/Logo';
 import { catalogItem, goalFromCatalog } from '../data/catalog';
@@ -114,11 +114,11 @@ export default function Onboarding() {
         {dots}
         <ScrollView contentContainerStyle={{ padding: 22, gap: 18, paddingBottom: 30 }}>
           <H1>{t('setPeriod')}</H1>
-          <T style={{ color: C.muted }}>{t('setPeriodHint')}</T>
-          <View style={{ gap: 8 }}>
-            <Label style={{ marginBottom: 0 }}>{t('hijriCalendar')}</Label>
-            <Segmented value={adj} onChange={setAdj} options={[{ value: 0, label: t('hijriStandard') }, { value: -1, label: t('hijriMorocco') }]} />
-          </View>
+          <T style={{ color: C.muted, lineHeight: 22, marginTop: -8 }}>{t('setPeriodHint')}</T>
+          <Card style={{ paddingVertical: 6 }}>
+            <Label style={{ marginTop: 10 }}>{t('hijriCalendar')}</Label>
+            <RadioList value={adj} onChange={setAdj} options={[{ value: 0, label: t('hijriStandard') }, { value: -1, label: t('hijriMorocco') }]} />
+          </Card>
           <PeriodPicker value={period} onChange={setPeriod} hijriAdjust={adj} />
         </ScrollView>
         {footer(true, () => setStep(3))}

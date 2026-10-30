@@ -129,24 +129,58 @@ export function Field({ value, onChangeText, placeholder, keyboardType, style })
 }
 
 // Date picker by steps: shows Gregorian + Hijri.
-export function DateStepper({ value, onChange, min }) {
+export function Radio({ on }) {
+  return (
+    <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: on ? C.accent : C.faint, alignItems: 'center', justifyContent: 'center' }}>
+      {on ? <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: C.accent }} /> : null}
+    </View>
+  );
+}
+
+export function RadioList({ options, value, onChange }) {
+  return options.map((o, i) => {
+    const on = value === o.value;
+    return (
+      <View key={String(o.value)}>
+        {i > 0 ? <Divider /> : null}
+        <Pressable onPress={() => onChange(o.value)} accessibilityRole="radio" accessibilityState={{ selected: on }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13 }}>
+          <Radio on={on} />
+          <Text style={{ flex: 1, fontSize: 16, color: on ? C.ink : C.muted, fontWeight: on ? '600' : '400' }}>{o.label}</Text>
+        </Pressable>
+      </View>
+    );
+  });
+}
+
+export function DateStepper({ value, onChange, min, hijriAdjust }) {
   const { state, t } = useStore();
   const lang = state.lang;
+  const adj = hijriAdjust != null ? hijriAdjust : state.hijriAdjust;
   const go = (d) => {
     let k = addDays(value, d);
     if (min && k < min) k = min;
     onChange(k);
   };
-  const b = (txt, d) => <Chip key={txt} label={txt} onPress={() => go(d)} style={{ paddingHorizontal: 11 }} />;
+  const isToday = value === todayKey();
+  const b = (txt, d) => (
+    <Pressable key={txt} onPress={() => go(d)} accessibilityRole="button"
+      style={{ flex: 1, height: 36, borderRadius: 18, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ color: C.ink, fontSize: 13, fontVariant: ['tabular-nums'] }}>{txt}</Text>
+    </Pressable>
+  );
   return (
-    <View style={{ gap: 10 }}>
+    <View style={{ gap: 14 }}>
       <View>
-        <T style={{ fontFamily: F.serif, fontSize: 20, lineHeight: 28 }}>{fmtDate(value, lang, { weekday: true, year: true })}</T>
-        <T style={{ color: C.gold, fontSize: 14 }}>{hijriText(value, lang, state.hijriAdjust)}</T>
+        <T style={{ fontFamily: F.serif, fontSize: 22, lineHeight: 32 }}>{fmtDate(value, lang, { weekday: true, year: true })}</T>
+        <T style={{ color: C.gold, fontSize: 14 }}>{hijriText(value, lang, adj)}</T>
       </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+      <View style={{ flexDirection: 'row', gap: 5, direction: 'ltr' }}>
         {b('−30', -30)}{b('−7', -7)}{b('−1', -1)}
-        <Chip label={t('today')} active onPress={() => onChange(min && todayKey() < min ? min : todayKey())} />
+        <Pressable onPress={() => onChange(min && todayKey() < min ? min : todayKey())} accessibilityRole="button"
+          style={{ flex: 1.9, height: 36, borderRadius: 18, borderWidth: 1, borderColor: C.accent, backgroundColor: isToday ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: isToday ? C.onAccent : C.gold, fontSize: 13, fontWeight: '600' }}>{t('today')}</Text>
+        </Pressable>
         {b('+1', 1)}{b('+7', 7)}{b('+30', 30)}
       </View>
     </View>

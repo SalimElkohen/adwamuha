@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
-import { T, H1, H2, Card, Divider, Label, Button, Segmented, Toggle, Confirm, Sheet } from '../components/ui';
+import { T, H1, H2, Card, Divider, Label, Button, Segmented, RadioList, Toggle, Confirm, Sheet } from '../components/ui';
 import { GoalEditor, CatalogSheet, PeriodPicker } from '../components/editors';
 import { diffDays, fmtDate, hijriText } from '../lib/dates';
 import { catalogItem } from '../data/catalog';
@@ -56,7 +56,7 @@ export default function Settings() {
           <Button small kind="secondary" title={t('change')} onPress={() => setPeriod({ ...p })} />
           <Divider style={{ marginVertical: 4 }} />
           <Label style={{ marginBottom: 0 }}>{t('hijriAdjust')}</Label>
-          <Segmented value={state.hijriAdjust} onChange={actions.setHijriAdjust} options={[{ value: 0, label: t('hijriStandard') }, { value: -1, label: t('hijriMorocco') }]} />
+          <RadioList value={state.hijriAdjust} onChange={actions.setHijriAdjust} options={[{ value: 0, label: t('hijriStandard') }, { value: -1, label: t('hijriMorocco') }]} />
         </Card>
 
         <Card style={{ paddingVertical: 6 }}>

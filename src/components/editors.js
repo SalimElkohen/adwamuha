@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
-import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateStepper, Sheet } from './ui';
+import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateStepper, Sheet, Radio } from './ui';
 import { addDays, dayBeforeRamadan, diffDays, fmtDate, hijriText, nextHijri, HIJRI_MONTHS } from '../lib/dates';
 import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
 import { goalTitle } from '../i18n';
@@ -51,42 +51,65 @@ export function PeriodPicker({ value, onChange, hijriAdjust }) {
   ];
 
   return (
-    <View style={{ gap: 18 }}>
-      <View>
+    <View style={{ gap: 16 }}>
+      <Card style={{ gap: 6 }}>
         <Label>{t('startDate')}</Label>
-        <DateStepper value={value.start} onChange={(k) => apply({ start: k })} />
-      </View>
-      <View>
-        <Label>{t('endDate')}</Label>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {modes.map((m) => (
-            <Chip key={m.value} label={m.label} active={mode === m.value} onPress={() => { setMode(m.value); apply({ mode: m.value }); }} />
-          ))}
-        </View>
-        <View style={{ marginTop: 14, gap: 10 }}>
-          {mode === 'days' ? (
-            <Stepper value={days} min={1} max={400} suffix={t('days')} onChange={(n) => { setDays(n); apply({ days: n }); }} />
-          ) : null}
-          {mode === 'date' ? <DateStepper value={value.end || addDays(value.start, 29)} min={value.start} onChange={(k) => onChange({ start: value.start, end: k })} /> : null}
-          {mode === 'hijri' ? (
-            <View style={{ gap: 10 }}>
-              <T style={{ fontSize: 13, color: C.muted }}>{t('month')}</T>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                {HIJRI_MONTHS[lang === 'ar' ? 'ar' : 'en'].map((name, i) => (
-                  <Chip key={name} label={name} active={hm === i + 1} onPress={() => { setHm(i + 1); apply({ hm: i + 1 }); }} />
-                ))}
-              </View>
-              <T style={{ fontSize: 13, color: C.muted }}>{t('dayOfMonth')}</T>
-              <Stepper value={hd} min={1} max={30} onChange={(n) => { setHd(n); apply({ hd: n }); }} />
+        <DateStepper value={value.start} hijriAdjust={adj} onChange={(k) => apply({ start: k })} />
+      </Card>
+
+      <Card style={{ paddingVertical: 6 }}>
+        <Label style={{ marginTop: 10 }}>{t('endDate')}</Label>
+        {modes.map((m, i) => {
+          const on = mode === m.value;
+          return (
+            <View key={m.value}>
+              {i > 0 ? <Divider /> : null}
+              <Pressable onPress={() => { setMode(m.value); apply({ mode: m.value }); }} accessibilityRole="radio" accessibilityState={{ selected: on }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13 }}>
+                <Radio on={on} />
+                <T style={{ flex: 1, color: on ? C.ink : C.muted, fontWeight: on ? '600' : '400' }}>{m.label}</T>
+              </Pressable>
+              {on && mode === 'days' ? (
+                <View style={{ paddingBottom: 14 }}>
+                  <Stepper value={days} min={1} max={400} suffix={t('days')} onChange={(n) => { setDays(n); apply({ days: n }); }} />
+                </View>
+              ) : null}
+              {on && mode === 'date' ? (
+                <View style={{ paddingBottom: 14 }}>
+                  <DateStepper value={value.end || addDays(value.start, 29)} min={value.start} hijriAdjust={adj} onChange={(k) => onChange({ start: value.start, end: k })} />
+                </View>
+              ) : null}
+              {on && mode === 'hijri' ? (
+                <View style={{ gap: 10, paddingBottom: 14 }}>
+                  <T style={{ fontSize: 13, color: C.faint }}>{t('month')}</T>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                    {HIJRI_MONTHS[lang === 'ar' ? 'ar' : 'en'].map((name, k) => (
+                      <Chip key={name} label={name} active={hm === k + 1} onPress={() => { setHm(k + 1); apply({ hm: k + 1 }); }} />
+                    ))}
+                  </View>
+                  <T style={{ fontSize: 13, color: C.faint }}>{t('dayOfMonth')}</T>
+                  <Stepper value={hd} min={1} max={30} onChange={(n) => { setHd(n); apply({ hd: n }); }} />
+                </View>
+              ) : null}
             </View>
-          ) : null}
-          {value.end ? (
-            <View style={{ backgroundColor: C.goldSoft, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 14 }}>
-              <T style={{ fontFamily: F.serif, fontSize: 18, lineHeight: 26 }}>{fmtDate(value.end, lang, { weekday: true, year: true })}</T>
-              <T style={{ color: C.gold, fontSize: 14 }}>{hijriText(value.end, lang, adj)} · {diffDays(value.start, value.end) + 1} {t('days')}</T>
+          );
+        })}
+      </Card>
+
+      <View style={{ backgroundColor: C.bgDeep, borderRadius: 18, borderWidth: 1, borderColor: C.accent, padding: 18, alignItems: 'center', gap: 4 }}>
+        <Label style={{ marginBottom: 2 }}>{t('endDate')}</Label>
+        {value.end ? (
+          <>
+            <T center style={{ fontFamily: F.serif, fontSize: 22, lineHeight: 32 }}>{fmtDate(value.end, lang, { weekday: true, year: true })}</T>
+            <T center style={{ color: C.gold, fontSize: 14 }}>{hijriText(value.end, lang, adj)}</T>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
+              <Text style={{ fontFamily: F.serif, fontSize: 30, lineHeight: 40, color: C.gold }}>{diffDays(value.start, value.end) + 1}</Text>
+              <Text style={{ color: C.muted, fontSize: 14 }}>{t('days')}</Text>
             </View>
-          ) : null}
-        </View>
+          </>
+        ) : (
+          <T center style={{ fontFamily: F.serif, fontSize: 22, lineHeight: 32 }}>{t('openEnded')}</T>
+        )}
       </View>
     </View>
   );
