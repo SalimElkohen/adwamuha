@@ -45,8 +45,8 @@ function archLength(xL, xR, ys, yb, k = 0.66) {
 
 // The opening sequence, in milliseconds.
 export const INTRO = { total: 2300, pattern: [0, 700], arch: [200, 1300], inner: [450, 1300], fill: [700, 800], star: [1300, 450], text: 1400, brand: 1800, hold: 3000, swap: 1000, after: 3000 };
-// hadith fully shown at total; it stays `hold` ms, then gives way to the logo (`swap` ms); the app opens `after` ms later
-const OPEN_AT = INTRO.total + INTRO.hold + INTRO.swap + INTRO.after;
+// hadith fully shown at total; it stays `hold` ms, then gives way to the logo (`swap` ms); `after` ms later the "tap to continue" hint appears
+const TAP_AT = INTRO.total + INTRO.hold + INTRO.swap + INTRO.after;
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const ease = (v) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 const phase = (t, [start, dur]) => ease(clamp01((t - start) / dur));
@@ -100,6 +100,8 @@ export default function Splash({ onDone }) {
   const fade = useRef(new Animated.Value(0)).current;
   const brand = useRef(new Animated.Value(0)).current;
   const swap = useRef(new Animated.Value(0)).current; // 0 = hadith, 1 = logo in the centre
+  const hint = useRef(new Animated.Value(0)).current; // "tap to continue"
+  const [canTap, setCanTap] = useState(false);
   const [t, setT] = useState(0); // time into the opening sequence, ms
 
   useEffect(() => {
@@ -125,9 +127,14 @@ export default function Splash({ onDone }) {
     };
     Promise.resolve(AccessibilityInfo && AccessibilityInfo.isReduceMotionEnabled ? AccessibilityInfo.isReduceMotionEnabled() : false)
       .then(run, () => run(false));
-    const id = setTimeout(onDone, OPEN_AT);
+    // only once the logo has sat in the centre for `after` ms: show the hint and accept the tap
+    const id = setTimeout(() => {
+      if (!alive) return;
+      setCanTap(true);
+      Animated.timing(hint, { toValue: 1, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    }, TAP_AT);
     return () => { alive = false; cancelAnimationFrame(raf); clearTimeout(id); };
-  }, [onDone, fade, brand, swap]);
+  }, [fade, brand, swap, hint]);
 
   let body = null;
   if (size) {
@@ -175,15 +182,15 @@ export default function Splash({ onDone }) {
           ] }}>
           <Logo width={LOGO_W} gold={M.gold} latin={M.ink} id="splash" />
         </Animated.View>
-        <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 12, alignItems: 'center', opacity: brand }}>
-          <Text style={{ fontSize: 11, color: M.inkSoft, opacity: 0.7 }}>{tr('tapToContinue')}</Text>
+        <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 14, alignItems: 'center', opacity: hint, transform: [{ translateY: hint.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }}>
+          <Text style={{ fontSize: 13, color: M.gold, letterSpacing: 0.6 }}>{tr('tapToContinue')}</Text>
         </Animated.View>
       </>
     );
   }
 
   return (
-    <Pressable onPress={onDone} accessibilityLabel={tr('tapToContinue')} style={{ flex: 1, backgroundColor: M.ivory }}>
+    <Pressable onPress={canTap ? onDone : undefined} disabled={!canTap} accessibilityLabel={tr('tapToContinue')} style={{ flex: 1, backgroundColor: M.ivory }}>
       <View style={{ flex: 1 }} onLayout={(e) => setSize(e.nativeEvent.layout)}>{body}</View>
     </Pressable>
   );
