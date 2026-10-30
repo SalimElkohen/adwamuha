@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { C } from '../theme';
+import { C, F } from '../theme';
 import { useStore } from '../lib/store';
-import { T, Label, Button, Chip, Segmented, Stepper, Field, DateStepper, Sheet } from './ui';
+import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateStepper, Sheet } from './ui';
 import { addDays, dayBeforeRamadan, diffDays, fmtDate, hijriText, nextHijri, HIJRI_MONTHS } from '../lib/dates';
 import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
 import { goalTitle } from '../i18n';
@@ -81,8 +81,8 @@ export function PeriodPicker({ value, onChange, hijriAdjust }) {
             </View>
           ) : null}
           {value.end ? (
-            <View style={{ backgroundColor: C.goldSoft, borderRadius: 12, padding: 12 }}>
-              <T style={{ fontWeight: '600' }}>{fmtDate(value.end, lang, { weekday: true, year: true })}</T>
+            <View style={{ backgroundColor: C.goldSoft, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 14 }}>
+              <T style={{ fontFamily: F.serif, fontSize: 18, lineHeight: 26 }}>{fmtDate(value.end, lang, { weekday: true, year: true })}</T>
               <T style={{ color: C.gold, fontSize: 14 }}>{hijriText(value.end, lang, adj)} · {diffDays(value.start, value.end) + 1} {t('days')}</T>
             </View>
           ) : null}
@@ -115,7 +115,7 @@ export function GoalEditor({ goal, onSave, onDelete, onClose }) {
   return (
     <Sheet onClose={onClose}>
       <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-        <T style={{ fontSize: 20, fontWeight: '700' }}>{goal ? t('editGoal') : t('newGoal')}</T>
+        <H2>{goal ? t('editGoal') : t('newGoal')}</H2>
         <View style={{ gap: 6 }}>
           <Label style={{ marginBottom: 0 }}>{t('goalName')}</Label>
           <Field value={name} onChangeText={setName} placeholder={t('goalNamePh')} />
@@ -151,29 +151,38 @@ export function CatalogList({ selected, onToggle, exclude = [] }) {
     { key: 'life', title: t('lifePack') },
   ];
   return (
-    <View style={{ gap: 18 }}>
-      {groups.map((g) => (
-        <View key={g.key} style={{ gap: 8 }}>
-          <Label style={{ marginBottom: 2 }}>{g.title}</Label>
-          {CATALOG.filter((c) => c.pack === g.key && !exclude.includes(c.id)).map((c) => {
-            const on = selected.includes(c.id);
-            const unit = lang === 'ar' ? c.unitAr : c.unitEn;
-            const sub = [c.target ? c.target + (unit ? ' ' + unit : '') : null, c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
-            return (
-              <Pressable key={c.id} onPress={() => onToggle(c.id)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: on ? C.accent : C.line, backgroundColor: on ? C.accentSoft : C.surface }}>
-                <View style={{ width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: on ? C.accent : C.line, backgroundColor: on ? C.accent : C.surface, alignItems: 'center', justifyContent: 'center' }}>
-                  {on ? <Text style={{ color: C.onAccent, fontWeight: '800', fontSize: 14 }}>✓</Text> : null}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <T style={{ fontWeight: '600' }}>{lang === 'ar' ? c.ar : c.en}</T>
-                  <T style={{ fontSize: 13, color: C.muted }}>{sub}</T>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-      ))}
+    <View style={{ gap: 22 }}>
+      {groups.map((g) => {
+        const items = CATALOG.filter((c) => c.pack === g.key && !exclude.includes(c.id));
+        if (!items.length) return null;
+        return (
+          <View key={g.key}>
+            <Label>{g.title}</Label>
+            <Card style={{ paddingVertical: 4, paddingHorizontal: 16 }}>
+              {items.map((c, i) => {
+                const on = selected.includes(c.id);
+                const unit = lang === 'ar' ? c.unitAr : c.unitEn;
+                const sub = [c.target ? c.target + (unit ? ' ' + unit : '') : null, c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
+                return (
+                  <View key={c.id}>
+                    {i > 0 ? <Divider /> : null}
+                    <Pressable onPress={() => onToggle(c.id)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 13 }}>
+                      <View style={{ flex: 1 }}>
+                        <T style={{ fontWeight: '600', color: on ? C.ink : C.muted }}>{lang === 'ar' ? c.ar : c.en}</T>
+                        <T style={{ fontSize: 13, color: C.faint, marginTop: 1 }}>{sub}</T>
+                      </View>
+                      <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: on ? C.accent : C.line, backgroundColor: on ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                        {on ? <Text style={{ color: C.onAccent, fontWeight: '800', fontSize: 13 }}>✓</Text> : null}
+                      </View>
+                    </Pressable>
+                  </View>
+                );
+              })}
+            </Card>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -185,7 +194,7 @@ export function CatalogSheet({ onClose, onAdd }) {
   return (
     <Sheet onClose={onClose}>
       <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
-        <T style={{ fontSize: 20, fontWeight: '700' }}>{t('addFromList')}</T>
+        <H2>{t('addFromList')}</H2>
         <CatalogList selected={sel} exclude={have} onToggle={(id) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))} />
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Button title={t('cancel')} kind="secondary" onPress={onClose} style={{ flex: 1 }} />

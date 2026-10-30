@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { C } from '../theme';
+import { C, F } from '../theme';
 import { useStore } from '../lib/store';
-import { T, Card, Label, Button, Segmented, Toggle, Confirm, Sheet } from '../components/ui';
+import { T, H1, H2, Card, Divider, Label, Button, Segmented, Toggle, Confirm, Sheet } from '../components/ui';
 import { GoalEditor, CatalogSheet, PeriodPicker } from '../components/editors';
 import { diffDays, fmtDate, hijriText } from '../lib/dates';
 import { catalogItem } from '../data/catalog';
@@ -22,8 +22,8 @@ export default function Settings() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
-        <T style={{ fontSize: 28, lineHeight: 34, fontWeight: '700' }}>{t('tabSettings')}</T>
+      <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
+        <H1 style={{ paddingTop: 4 }}>{t('tabSettings')}</H1>
 
         <Card style={{ gap: 10 }}>
           <Label style={{ marginBottom: 0 }}>{t('language')}</Label>
@@ -32,16 +32,16 @@ export default function Settings() {
 
         <Card style={{ gap: 4 }}>
           <Label>{t('goals')}</Label>
-          {goals.map((g) => (
-            <Pressable key={g.id} onPress={() => setEdit(g)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderColor: C.line, gap: 10 }}>
+          {goals.map((g, i) => (
+            <Pressable key={g.id} onPress={() => setEdit(g)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderColor: C.divider, gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <T style={{ fontWeight: '600' }}>{goalTitle(g, lang, catalogItem)}</T>
-                <T style={{ fontSize: 13, color: C.muted }}>{goalDetail(g, lang, catalogItem, t)}</T>
+                <T style={{ fontSize: 13, color: C.faint }}>{goalDetail(g, lang, catalogItem, t)}</T>
               </View>
-              <Text style={{ fontSize: 20, color: C.faint }}>{chevron}</Text>
+              <Text style={{ fontSize: 20, color: C.gold }}>{chevron}</Text>
             </Pressable>
           ))}
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
             <Button small kind="secondary" title={t('addFromList')} onPress={() => setAdding(true)} style={{ flex: 1 }} />
             <Button small kind="secondary" title={t('addOwn')} onPress={() => setEdit('new')} style={{ flex: 1 }} />
           </View>
@@ -50,25 +50,27 @@ export default function Settings() {
         <Card style={{ gap: 10 }}>
           <Label style={{ marginBottom: 0 }}>{t('setPeriod')}</Label>
           <View>
-            <T style={{ fontWeight: '600' }}>{fmtDate(p.start, lang, { year: true })} → {p.end ? fmtDate(p.end, lang, { year: true }) : t('openEnded')}</T>
+            <T style={{ fontFamily: F.serif, fontSize: 18, lineHeight: 28 }}>{fmtDate(p.start, lang, { year: true })} → {p.end ? fmtDate(p.end, lang, { year: true }) : t('openEnded')}</T>
             <T style={{ fontSize: 13, color: C.gold }}>{hijriText(p.start, lang, state.hijriAdjust)}{p.end ? ' → ' + hijriText(p.end, lang, state.hijriAdjust) + ' · ' + (diffDays(p.start, p.end) + 1) + ' ' + t('days') : ''}</T>
           </View>
           <Button small kind="secondary" title={t('change')} onPress={() => setPeriod({ ...p })} />
-          <Label style={{ marginBottom: 0, marginTop: 6 }}>{t('hijriAdjust')}</Label>
+          <Divider style={{ marginVertical: 4 }} />
+          <Label style={{ marginBottom: 0 }}>{t('hijriAdjust')}</Label>
           <Segmented value={state.hijriAdjust} onChange={actions.setHijriAdjust} options={[{ value: 0, label: t('hijriStandard') }, { value: -1, label: t('hijriMorocco') }]} />
         </Card>
 
         <Card style={{ paddingVertical: 6 }}>
           <Label style={{ marginTop: 10, marginBottom: 0 }}>{t('reminders')}</Label>
           <Toggle label={t('morning')} sub={state.reminders.morningTime} value={state.reminders.morning} onChange={(v) => actions.setReminders({ morning: v })} />
-          <View style={{ height: 1, backgroundColor: C.line }} />
+          <Divider />
           <Toggle label={t('evening')} sub={state.reminders.eveningTime} value={state.reminders.evening} onChange={(v) => actions.setReminders({ evening: v })} />
         </Card>
 
         <Card style={{ gap: 6 }}>
           <Label style={{ marginBottom: 0 }}>{t('privacy')}</Label>
           <T style={{ fontSize: 14, color: C.muted, lineHeight: 20 }}>{t('privacyBody')}</T>
-          <Label style={{ marginBottom: 0, marginTop: 10 }}>{t('about')}</Label>
+          <Divider style={{ marginVertical: 8 }} />
+          <Label style={{ marginBottom: 0 }}>{t('about')}</Label>
           <T style={{ fontSize: 14, color: C.muted, lineHeight: 20 }}>{t('aboutBody')}</T>
           <T style={{ fontSize: 12, color: C.faint, marginTop: 4 }}>Adwamuhā 1.0</T>
         </Card>
@@ -93,7 +95,7 @@ export default function Settings() {
       {period ? (
         <Sheet onClose={() => setPeriod(null)}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
-            <T style={{ fontSize: 20, fontWeight: '700' }}>{t('setPeriod')}</T>
+            <H2>{t('setPeriod')}</H2>
             <PeriodPicker value={period} onChange={setPeriod} />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button title={t('cancel')} kind="secondary" onPress={() => setPeriod(null)} style={{ flex: 1 }} />

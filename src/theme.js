@@ -1,26 +1,33 @@
-// Green Dome palette: inspired by the green dome of the Prophet's Mosque ﷺ in Madinah —
-// deep dome green as the ground, gold for what is achieved, ivory for text.
+// Green Dome palette, inspired by the green dome of the Prophet's Mosque ﷺ in Madinah.
+// Three colours only — dome green, ivory, gold — plus a soft terracotta reserved for "not done".
 export const C = {
   bg: '#1D6B4E', // dome green
   bgDeep: '#175A41',
-  surface: '#22775A', // cards, a step lighter than the ground
-  ink: '#F8F3E8', // ivory text
-  muted: '#CFE0D6',
-  faint: '#9CC2AF',
-  line: '#3A8A6A',
-  accent: '#E3C277', // gold: done, primary actions
-  onAccent: '#163F2F', // text on gold
-  accentSoft: '#356E4C', // gold-tinted green for done rows
+  surface: '#185C44', // cards sit a shade deeper than the ground, like inlaid panels
+  raised: '#21765A', // controls inside cards (segmented track, steppers)
+  ink: '#F8F3E8', // ivory
+  muted: '#C9DACF',
+  faint: '#8FB9A5',
+  line: 'rgba(227,194,119,0.28)', // gold hairline around cards and outlined controls
+  divider: 'rgba(248,243,232,0.09)', // between rows inside a card
+  accent: '#E3C277', // gold
+  onAccent: '#163F2F',
+  accentSoft: 'rgba(227,194,119,0.13)',
   gold: '#E3C277',
-  goldSoft: '#2E6A4E',
-  miss: '#F4A08F',
-  missSoft: '#5B5240',
-  warn: '#F2C14E',
-  empty: '#2C7F5F',
+  goldSoft: 'rgba(227,194,119,0.10)',
+  miss: '#E9A38E', // soft terracotta
+  missSoft: 'rgba(233,163,142,0.12)',
+  warn: '#F0C661',
+  empty: 'rgba(248,243,232,0.10)',
   white: '#FFFFFF',
 };
 
-export const R = { card: 16, row: 14, pill: 999 };
+export const F = {
+  serif: 'Amiri-Bold', // headings: the logo's typeface
+  serifRegular: 'Amiri-Regular',
+};
+
+export const R = { card: 18, row: 14, pill: 999 };
 
 export function tone(p) {
   if (p == null) return C.faint;

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C } from '../theme';
 import { useStore } from '../lib/store';
-import { T, Label, Button, Segmented, Toggle } from '../components/ui';
+import { T, H1, Label, Button, Card, Divider, Segmented, Toggle } from '../components/ui';
 import { CatalogList, GoalEditor, PeriodPicker } from '../components/editors';
 import Logo from '../components/Logo';
 import { catalogItem, goalFromCatalog } from '../data/catalog';
@@ -29,16 +29,16 @@ export default function Onboarding() {
   };
 
   const footer = (canNext, onNext, nextLabel) => (
-    <View style={{ flexDirection: 'row', gap: 10, padding: 16, borderTopWidth: 1, borderColor: C.line, backgroundColor: C.bg }}>
+    <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16, borderTopWidth: 1, borderColor: C.divider, backgroundColor: C.bg }}>
       {step > 0 ? <Button title={t('back')} kind="secondary" onPress={() => setStep(step - 1)} style={{ flex: 1 }} /> : null}
       <Button title={nextLabel || t('next')} disabled={!canNext} onPress={onNext} style={{ flex: 2 }} />
     </View>
   );
 
   const dots = (
-    <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'center', paddingTop: 8 }}>
+    <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
       {[0, 1, 2, 3].map((i) => (
-        <View key={i} style={{ width: i === step ? 22 : 7, height: 7, borderRadius: 4, backgroundColor: i <= step ? C.accent : C.line }} />
+        <View key={i} style={{ width: i === step ? 24 : 6, height: 6, borderRadius: 3, backgroundColor: i <= step ? C.accent : C.empty }} />
       ))}
     </View>
   );
@@ -47,11 +47,16 @@ export default function Onboarding() {
     return (
       <View style={{ flex: 1 }}>
         {dots}
-        <ScrollView contentContainerStyle={{ padding: 24, gap: 22, flexGrow: 1, justifyContent: 'center' }}>
-          <View style={{ alignItems: 'center' }}><Logo width={240} gold={C.gold} latin={C.ink} id="onb" /></View>
-          <T center style={{ fontSize: 24, lineHeight: 30, fontWeight: '700' }}>{t('welcomeTitle')}</T>
-          <T center style={{ color: C.muted }}>{t('welcomeBody')}</T>
-          <View style={{ gap: 8, marginTop: 10 }}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 28, paddingVertical: 24, gap: 18, flexGrow: 1, justifyContent: 'center' }}>
+          <View style={{ alignItems: 'center', marginBottom: 6 }}><Logo width={250} gold={C.gold} latin={C.ink} id="onb" /></View>
+          <H1 center>{t('welcomeTitle')}</H1>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <View style={{ width: 34, height: 1, backgroundColor: C.line }} />
+            <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: '45deg' }] }} />
+            <View style={{ width: 34, height: 1, backgroundColor: C.line }} />
+          </View>
+          <T center style={{ color: C.muted, lineHeight: 24 }}>{t('welcomeBody')}</T>
+          <View style={{ gap: 4, marginTop: 18 }}>
             <Label style={{ textAlign: 'center' }}>{t('chooseLanguage')}</Label>
             <Segmented value={lang} onChange={actions.setLang} options={[{ value: 'en', label: 'English' }, { value: 'ar', label: 'العربية' }]} />
           </View>
@@ -65,27 +70,31 @@ export default function Onboarding() {
     return (
       <View style={{ flex: 1 }}>
         {dots}
-        <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 30 }}>
-          <T style={{ fontSize: 26, lineHeight: 32, fontWeight: '700' }}>{t('pickGoals')}</T>
+        <ScrollView contentContainerStyle={{ padding: 22, gap: 14, paddingBottom: 30 }}>
+          <H1>{t('pickGoals')}</H1>
           <T style={{ color: C.muted }}>{t('pickGoalsHint')}</T>
           <CatalogList selected={picked} onToggle={(id) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))} />
           {custom.length ? (
-            <View style={{ gap: 8 }}>
-              <Label style={{ marginBottom: 2 }}>{t('yourGoals')}</Label>
-              {custom.map((g) => (
-                <Pressable key={g.id} onPress={() => setCustom((c) => c.filter((x) => x.id !== g.id))}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: C.accent, backgroundColor: C.accentSoft }}>
-                  <View style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: C.onAccent, fontWeight: '800' }}>✓</Text>
+            <View>
+              <Label>{t('yourGoals')}</Label>
+              <Card style={{ paddingVertical: 4, paddingHorizontal: 16 }}>
+                {custom.map((g, i) => (
+                  <View key={g.id}>
+                    {i > 0 ? <Divider /> : null}
+                    <Pressable onPress={() => setCustom((c) => c.filter((x) => x.id !== g.id))} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 13 }}>
+                      <T style={{ flex: 1, fontWeight: '600' }}>{g.name}</T>
+                      <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ color: C.onAccent, fontWeight: '800', fontSize: 13 }}>✓</Text>
+                      </View>
+                    </Pressable>
                   </View>
-                  <T style={{ flex: 1, fontWeight: '600' }}>{g.name}</T>
-                </Pressable>
-              ))}
+                ))}
+              </Card>
             </View>
           ) : null}
           <Button title={t('addOwn')} kind="secondary" onPress={() => setEditing(true)} />
           {count > 6 ? (
-            <View style={{ backgroundColor: C.goldSoft, borderRadius: 12, padding: 12 }}>
+            <View style={{ backgroundColor: C.goldSoft, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 14 }}>
               <T style={{ fontSize: 14 }}>{t('tooMany')}</T>
             </View>
           ) : null}
@@ -103,8 +112,8 @@ export default function Onboarding() {
     return (
       <View style={{ flex: 1 }}>
         {dots}
-        <ScrollView contentContainerStyle={{ padding: 20, gap: 18, paddingBottom: 30 }}>
-          <T style={{ fontSize: 26, lineHeight: 32, fontWeight: '700' }}>{t('setPeriod')}</T>
+        <ScrollView contentContainerStyle={{ padding: 22, gap: 18, paddingBottom: 30 }}>
+          <H1>{t('setPeriod')}</H1>
           <T style={{ color: C.muted }}>{t('setPeriodHint')}</T>
           <View style={{ gap: 8 }}>
             <Label style={{ marginBottom: 0 }}>{t('hijriCalendar')}</Label>
@@ -121,13 +130,13 @@ export default function Onboarding() {
     <View style={{ flex: 1 }}>
       {dots}
       <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 30 }}>
-        <T style={{ fontSize: 26, lineHeight: 32, fontWeight: '700' }}>{t('remindersTitle')}</T>
+        <H1>{t('remindersTitle')}</H1>
         <T style={{ color: C.muted }}>{t('remindersHint')}</T>
-        <View style={{ backgroundColor: C.surface, borderRadius: 16, borderWidth: 1, borderColor: C.line, paddingHorizontal: 16, paddingVertical: 4 }}>
+        <Card style={{ paddingHorizontal: 16, paddingVertical: 2 }}>
           <Toggle label={t('morning')} sub="05:00" value={rem.morning} onChange={(v) => setRem({ ...rem, morning: v })} />
-          <View style={{ height: 1, backgroundColor: C.line }} />
+          <Divider />
           <Toggle label={t('evening')} sub="18:00" value={rem.evening} onChange={(v) => setRem({ ...rem, evening: v })} />
-        </View>
+        </Card>
       </ScrollView>
       {footer(true, finish, t('finish'))}
     </View>

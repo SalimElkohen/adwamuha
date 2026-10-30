@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, tone } from '../theme';
 import { useStore } from '../lib/store';
-import { T, Card, Label, Ring } from '../components/ui';
+import { T, H1, Card, Label, Ring } from '../components/ui';
 import { addDays, diffDays, hijriOf, HIJRI_MONTHS, monthShort, rangeKeys, todayKey, fromKey } from '../lib/dates';
 import { constancy, dayFraction, goalScore, goalStreak, isActiveOn, mark, goalStart } from '../lib/stats';
 import { catalogItem } from '../data/catalog';
@@ -78,7 +78,7 @@ function Grid() {
                 const bg = !active ? 'transparent' : m === 'd' ? C.accent : m === 'x' ? C.miss : fut ? 'transparent' : C.empty;
                 return (
                   <Pressable key={k} disabled={!active || fut} onPress={() => actions.cycleMark(r.goal.id, k)}
-                    style={{ width: CELL, height: 22, marginRight: GAP, borderRadius: 3, backgroundColor: bg, borderWidth: active && fut ? 1 : 0, borderColor: C.line }} />
+                    style={{ width: CELL, height: 22, marginRight: GAP, borderRadius: 2, backgroundColor: bg, borderWidth: active && fut ? 1 : 0, borderColor: C.line }} />
                 );
               })}
             </View>
@@ -110,19 +110,19 @@ export default function Progress() {
   const left = total ? Math.max(0, total - elapsed) : null;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
-      <T style={{ fontSize: 28, lineHeight: 34, fontWeight: '700' }}>{t('tabProgress')}</T>
+    <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
+      <H1 style={{ paddingTop: 4 }}>{t('tabProgress')}</H1>
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-around', flexWrap: 'wrap', gap: 16 }}>
           <View style={{ alignItems: 'center', gap: 6 }}>
-            <Ring size={132} stroke={12} pct={total ? (100 * elapsed) / total : 100} color={C.accent} center={String(elapsed)} sub={total ? '/ ' + total : t('openJourney')} />
-            <T center style={{ fontWeight: '700', fontSize: 14 }}>{t('journey')}</T>
-            <T center style={{ fontSize: 12, color: C.muted }}>{total ? t('daysLeft', { n: left }) : t('openJourney')}</T>
+            <Ring size={128} stroke={8} pct={total ? (100 * elapsed) / total : 100} color={C.accent} center={String(elapsed)} sub={total ? '/ ' + total : t('openJourney')} />
+            <Label style={{ marginBottom: 0, marginTop: 4 }}>{t('journey')}</Label>
+            <T center style={{ fontSize: 12, color: C.faint }}>{total ? t('daysLeft', { n: left }) : t('openJourney')}</T>
           </View>
           <View style={{ alignItems: 'center', gap: 6 }}>
-            <Ring size={132} stroke={12} pct={score.pct || 0} color={tone(score.pct)} center={score.pct == null ? '—' : Math.round(score.pct) + '%'} sub={t('constancy')} />
-            <T center style={{ fontWeight: '700', fontSize: 14 }}>{t('overall')}</T>
-            <T center style={{ fontSize: 12, color: C.muted }}>{score.done} / {score.expected}</T>
+            <Ring size={128} stroke={8} pct={score.pct || 0} color={tone(score.pct)} center={score.pct == null ? '—' : Math.round(score.pct) + '%'} sub={t('constancy')} />
+            <Label style={{ marginBottom: 0, marginTop: 4 }}>{t('overall')}</Label>
+            <T center style={{ fontSize: 12, color: C.faint }}>{score.done} / {score.expected}</T>
           </View>
         </View>
       </Card>
@@ -135,9 +135,9 @@ export default function Progress() {
             const k = g.freq === 'weekly' ? 0 : goalStreak(g, state, today);
             return (
               <View key={g.id} style={{ width: '33.33%', alignItems: 'center', gap: 4, paddingHorizontal: 4 }}>
-                <Ring size={74} stroke={8} pct={s.pct || 0} color={tone(s.pct)} center={s.pct == null ? '—' : Math.round(s.pct) + '%'} />
+                <Ring size={72} stroke={5} pct={s.pct || 0} color={tone(s.pct)} center={s.pct == null ? '—' : Math.round(s.pct) + '%'} />
                 <Text numberOfLines={2} style={{ fontSize: 12, fontWeight: '600', color: C.ink, textAlign: 'center' }}>{goalTitle(g, lang, catalogItem)}</Text>
-                <Text style={{ fontSize: 11, color: k > 0 ? C.gold : C.faint }}>{k > 0 ? '🔥 ' + k : s.done + '/' + s.expected}</Text>
+                <Text style={{ fontSize: 11, color: k > 0 ? C.gold : C.faint }}>{k > 0 ? '✦ ' + k : s.done + '/' + s.expected}</Text>
               </View>
             );
           })}
@@ -150,7 +150,7 @@ export default function Progress() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 12 }}>
           {[[C.accent, t('legendDone')], [C.miss, t('legendMissed')], [C.empty, t('legendOpen')]].map(([c, l]) => (
             <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: c }} />
+              <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: c }} />
               <Text style={{ fontSize: 12, color: C.muted }}>{l}</Text>
             </View>
           ))}

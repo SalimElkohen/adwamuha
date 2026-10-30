@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { C, tone } from '../theme';
+import { C, F, tone } from '../theme';
 import { useStore } from '../lib/store';
-import { T, Card, Label, Button, Confirm } from '../components/ui';
+import { T, H1, H2, Card, Divider, Label, Button, Confirm } from '../components/ui';
 import { diffDays, fmtDate, hijriText, todayKey } from '../lib/dates';
 import { BUILT_IN_CHALLENGES, challengeDates, loadRemoteChallenges } from '../data/challenges';
 import { catalogItem } from '../data/catalog';
@@ -25,9 +25,11 @@ export default function Challenges() {
 
   return (
     <View style={{ flex: 1 }}>
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
-      <T style={{ fontSize: 28, lineHeight: 34, fontWeight: '700' }}>{t('tabChallenges')}</T>
-      <T style={{ color: C.muted }}>{t('challengesHint')}</T>
+    <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
+      <View style={{ paddingTop: 4 }}>
+        <H1>{t('tabChallenges')}</H1>
+        <T style={{ color: C.muted, lineHeight: 22 }}>{t('challengesHint')}</T>
+      </View>
 
       {state.challenges.length ? <Label style={{ marginTop: 6, marginBottom: 0 }}>{t('activeChallenges')}</Label> : null}
       {state.challenges.map((c) => {
@@ -38,11 +40,11 @@ export default function Challenges() {
         const total = diffDays(c.start, c.end) + 1;
         const n = Math.max(0, Math.min(total, diffDays(c.start, today) + 1));
         return (
-          <Card key={c.id} style={{ borderColor: C.gold, gap: 8 }}>
-            <T style={{ fontSize: 18, fontWeight: '700' }}>{c.title[lang] || c.title.en}</T>
+          <Card key={c.id} style={{ borderColor: C.gold, gap: 10 }}>
+            <H2>{c.title[lang] || c.title.en}</H2>
             <T style={{ fontSize: 13, color: C.muted }}>{t('from', { a: fmtDate(c.start, lang), b: fmtDate(c.end, lang, { year: true }) })}</T>
-            <View style={{ height: 8, borderRadius: 4, backgroundColor: C.empty, overflow: 'hidden' }}>
-              <View style={{ width: (100 * n) / total + '%', height: 8, backgroundColor: C.gold }} />
+            <View style={{ height: 4, borderRadius: 2, backgroundColor: C.empty, overflow: 'hidden' }}>
+              <View style={{ width: (100 * n) / total + '%', height: 4, backgroundColor: C.gold }} />
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <Text style={{ fontSize: 13, color: C.muted }}>{t('dayOf', { n, total })}</Text>
@@ -59,11 +61,12 @@ export default function Challenges() {
         const len = diffDays(dates.start, dates.end) + 1;
         const tx = ch[lang] || ch.en;
         return (
-          <Card key={ch.id} style={{ gap: 8 }}>
-            <T style={{ fontSize: 18, fontWeight: '700' }}>{tx.title}</T>
-            <T style={{ color: C.muted, fontSize: 14, lineHeight: 20 }}>{tx.desc}</T>
-            <T style={{ fontSize: 13 }}>{goalNames(ch)}</T>
-            <View style={{ backgroundColor: C.goldSoft, borderRadius: 10, padding: 10 }}>
+          <Card key={ch.id} style={{ gap: 10 }}>
+            <H2>{tx.title}</H2>
+            <T style={{ color: C.muted, fontSize: 14, lineHeight: 21 }}>{tx.desc}</T>
+            <T style={{ fontSize: 13, color: C.ink }}><Text style={{ color: C.gold }}>✦ </Text>{goalNames(ch)}</T>
+            <Divider />
+            <View style={{ gap: 2 }}>
               <T style={{ fontSize: 13, fontWeight: '600' }}>{t('from', { a: fmtDate(dates.start, lang), b: fmtDate(dates.end, lang, { year: true }) })} · {t('durationDays', { n: len })}</T>
               <T style={{ fontSize: 12, color: C.gold }}>{hijriText(dates.start, lang, state.hijriAdjust)} → {hijriText(dates.end, lang, state.hijriAdjust)}</T>
             </View>
@@ -74,15 +77,22 @@ export default function Challenges() {
 
       <Label style={{ marginTop: 6, marginBottom: 0 }}>{t('history')}</Label>
       {!state.history.length ? <T style={{ color: C.faint }}>{t('noHistory')}</T> : null}
-      {state.history.map((h) => (
-        <Card key={h.id + h.finishedAt} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <View style={{ flex: 1 }}>
-            <T style={{ fontWeight: '600' }}>{h.title[lang] || h.title.en}</T>
-            <T style={{ fontSize: 12, color: C.muted }}>{t('from', { a: fmtDate(h.start, lang), b: fmtDate(h.end, lang, { year: true }) })}</T>
-          </View>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: tone(h.pct) }}>{h.pct == null ? '—' : h.pct + '%'}</Text>
+      {state.history.length ? (
+        <Card style={{ paddingVertical: 4 }}>
+          {state.history.map((h, i) => (
+            <View key={h.id + h.finishedAt}>
+              {i > 0 ? <Divider /> : null}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <T style={{ fontWeight: '600' }}>{h.title[lang] || h.title.en}</T>
+                  <T style={{ fontSize: 12, color: C.faint }}>{t('from', { a: fmtDate(h.start, lang), b: fmtDate(h.end, lang, { year: true }) })}</T>
+                </View>
+                <Text style={{ fontFamily: F.serif, fontSize: 22, color: tone(h.pct) }}>{h.pct == null ? '—' : h.pct + '%'}</Text>
+              </View>
+            </View>
+          ))}
         </Card>
-      ))}
+      ) : null}
 
     </ScrollView>
       {leaving ? (

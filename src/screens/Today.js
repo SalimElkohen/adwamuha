@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { C, tone } from '../theme';
+import { C, F, tone } from '../theme';
 import { useStore } from '../lib/store';
-import { T, Card, Label, Button } from '../components/ui';
+import { T, H1, Card, Divider, Label, Button } from '../components/ui';
 import { addDays, diffDays, fmtDate, hijriText, todayKey } from '../lib/dates';
 import { activeGoals, constancy, goalScore, goalStreak, mark, streak, weekBlock } from '../lib/stats';
 import { catalogItem } from '../data/catalog';
@@ -22,28 +22,38 @@ function GoalRow({ goal, day, readOnly }) {
     sub = met ? '✓ ' + t('goalReached') + ' · ' + b.done + '/' + b.target : sub + ' · ' + t('thisWeek', { d: b.done, t: b.target });
   } else {
     const s = goalStreak(goal, state, day <= today ? day : today);
-    if (s > 0) sub = sub + ' · 🔥 ' + s;
+    if (s > 0) sub = sub + ' · ✦ ' + s;
   }
-  const bg = m === 'd' ? C.accentSoft : m === 'x' ? C.missSoft : met ? C.bg : C.surface;
-  const border = m === 'd' ? C.accent : m === 'x' ? C.miss : C.line;
+  const done = m === 'd', miss = m === 'x';
   return (
-    <View style={{ flexDirection: 'row', borderWidth: 1, borderColor: border, borderStyle: met ? 'dashed' : 'solid', backgroundColor: bg, borderRadius: 14, overflow: 'hidden' }}>
-      <Pressable disabled={readOnly} onPress={() => actions.toggleMark(goal.id, day, 'd')} accessibilityRole="button" accessibilityState={{ checked: m === 'd' }}
-        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: met ? 9 : 13, paddingHorizontal: 14 }}>
-        <View style={{ width: met ? 22 : 28, height: met ? 22 : 28, borderRadius: 14, borderWidth: 2, borderColor: m === 'd' ? C.accent : m === 'x' ? C.miss : met ? C.gold : C.line, backgroundColor: m === 'd' ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: m === 'd' ? C.onAccent : m === 'x' ? C.miss : met ? C.gold : 'transparent', fontWeight: '800', fontSize: met ? 12 : 15 }}>{m === 'x' ? '✕' : '✓'}</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', opacity: met && !done ? 0.75 : 1 }}>
+      <Pressable disabled={readOnly} onPress={() => actions.toggleMark(goal.id, day, 'd')} accessibilityRole="button" accessibilityState={{ checked: done }}
+        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14 }}>
+        <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1.5,
+          borderColor: done ? C.accent : miss ? C.miss : met ? C.gold : C.faint,
+          backgroundColor: done ? C.accent : miss ? C.missSoft : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+          {done || miss || met ? <Text style={{ color: done ? C.onAccent : miss ? C.miss : C.gold, fontWeight: '800', fontSize: 13 }}>{miss ? '✕' : '✓'}</Text> : null}
         </View>
         <View style={{ flex: 1 }}>
-          <T style={{ fontWeight: met ? '500' : '600', color: met ? C.muted : C.ink }}>{goalTitle(goal, lang, catalogItem)}</T>
-          <T style={{ fontSize: 13, lineHeight: 18, color: met ? C.gold : C.muted }}>{sub}</T>
+          <T style={{ fontWeight: '600', color: miss ? C.muted : C.ink, textDecorationLine: miss ? 'line-through' : 'none' }}>{goalTitle(goal, lang, catalogItem)}</T>
+          <T style={{ fontSize: 13, lineHeight: 18, color: met ? C.gold : C.faint }}>{sub}</T>
         </View>
       </Pressable>
-      <Pressable disabled={readOnly} onPress={() => actions.toggleMark(goal.id, day, 'x')} accessibilityRole="button" accessibilityLabel="Not done"
-        style={{ width: 48, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderColor: border }}>
-        <Text style={{ fontSize: 16, color: m === 'x' ? C.miss : C.faint }}>✕</Text>
+      <Pressable disabled={readOnly} onPress={() => actions.toggleMark(goal.id, day, 'x')} accessibilityRole="button" accessibilityLabel="Not done" hitSlop={8}
+        style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: miss ? C.miss : C.divider, alignItems: 'center', justifyContent: 'center', marginHorizontal: 4 }}>
+        <Text style={{ fontSize: 11, color: miss ? C.miss : C.faint }}>✕</Text>
       </Pressable>
     </View>
   );
+}
+
+function Rows({ list, day, future }) {
+  return list.map((g, i) => (
+    <View key={g.id}>
+      {i > 0 ? <Divider /> : null}
+      <GoalRow goal={g} day={day} readOnly={future} />
+    </View>
+  ));
 }
 
 export default function Today() {
@@ -66,26 +76,27 @@ export default function Today() {
   const prev = rtl ? '›' : '‹', next = rtl ? '‹' : '›';
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
-      <View>
-        <T style={{ fontSize: 28, lineHeight: 34, fontWeight: '700' }}>{fmtDate(today, lang, { weekday: true })}</T>
-        <T style={{ color: C.gold, fontSize: 15 }}>{hijriText(today, lang, state.hijriAdjust)}</T>
+    <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
+      <View style={{ paddingTop: 4 }}>
+        <Label style={{ marginBottom: 2 }}>{hijriText(today, lang, state.hijriAdjust)}</Label>
+        <H1>{fmtDate(today, lang, { weekday: true })}</H1>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        <Card style={{ flex: 1, padding: 14 }}>
-          <Label style={{ marginBottom: 4 }}>{t('constancy')}</Label>
-          <Text style={{ fontSize: 32, fontWeight: '700', color: score.pct == null ? C.faint : tone(score.pct), fontVariant: ['tabular-nums'], textAlign: rtl ? 'right' : 'left' }}>
+      <Card style={{ flexDirection: 'row', paddingVertical: 16, paddingHorizontal: 0 }}>
+        <View style={{ flex: 1, alignItems: 'center', gap: 2 }}>
+          <Label>{t('constancy')}</Label>
+          <Text style={{ fontFamily: F.serif, fontSize: 34, lineHeight: 46, color: score.pct == null ? C.faint : tone(score.pct) }}>
             {score.pct == null ? '—' : Math.round(score.pct) + '%'}
           </Text>
-          <T style={{ fontSize: 12, color: C.muted, lineHeight: 16 }}>{score.pct == null ? t('noScoreYet') : score.done + ' / ' + score.expected}</T>
-        </Card>
-        <Card style={{ flex: 1, padding: 14 }}>
-          <Label style={{ marginBottom: 4 }}>{t('streak')}</Label>
-          <Text style={{ fontSize: 32, fontWeight: '700', color: st > 0 ? C.gold : C.faint, fontVariant: ['tabular-nums'], textAlign: rtl ? 'right' : 'left' }}>{st > 0 ? '🔥 ' + st : '0'}</Text>
-          <T style={{ fontSize: 12, color: C.muted, lineHeight: 16 }}>{t('streakDays', { n: st })}</T>
-        </Card>
-      </View>
+          <T center style={{ fontSize: 12, color: C.faint, lineHeight: 16 }}>{score.pct == null ? t('noScoreYet') : score.done + ' / ' + score.expected}</T>
+        </View>
+        <View style={{ width: 1, backgroundColor: C.divider, marginVertical: 4 }} />
+        <View style={{ flex: 1, alignItems: 'center', gap: 2 }}>
+          <Label>{t('streak')}</Label>
+          <Text style={{ fontFamily: F.serif, fontSize: 34, lineHeight: 46, color: st > 0 ? C.gold : C.faint }}>{st}</Text>
+          <T center style={{ fontSize: 12, color: C.faint, lineHeight: 16 }}>{t('streakDays', { n: st })}</T>
+        </View>
+      </Card>
 
       {ended.map((c) => {
         const gs = state.goals.filter((g) => c.goalIds.includes(g.id) || (c.linkedIds || []).includes(g.id)).map((g) => ({ ...g, start: c.start, end: c.end, challengeId: c.id }));
@@ -94,7 +105,7 @@ export default function Today() {
         const title = c.title[lang] || c.title.en;
         return (
           <Card key={c.id} style={{ backgroundColor: C.goldSoft, borderColor: C.gold, gap: 10 }}>
-            <T style={{ fontWeight: '700', fontSize: 17 }}>{t('challengeDone', { title })}</T>
+            <T style={{ fontFamily: F.serif, fontSize: 20, lineHeight: 30 }}>{t('challengeDone', { title })}</T>
             <T style={{ color: C.muted }}>{t('challengeDoneBody', { pct: e ? Math.round((100 * d) / e) + '%' : '—' })}</T>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Button small kind="secondary" title={t('extend7')} onPress={() => actions.extendChallenge(c.id, 7)} style={{ flex: 1 }} />
@@ -109,46 +120,53 @@ export default function Today() {
         <Card><T>{t('beforeStart', { date: fmtDate(p.start, lang, { weekday: true }) })}</T></Card>
       ) : null}
 
-      <Card style={{ gap: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <Card style={{ paddingVertical: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10 }}>
           <Pressable onPress={() => setDay(addDays(day, -1))} disabled={day <= p.start} accessibilityLabel="Previous day"
-            style={{ width: 38, height: 38, borderRadius: 10, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center', opacity: day <= p.start ? 0.35 : 1 }}>
-            <Text style={{ fontSize: 20, color: C.ink }}>{prev}</Text>
+            style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center', opacity: day <= p.start ? 0.3 : 1 }}>
+            <Text style={{ fontSize: 20, color: C.gold }}>{prev}</Text>
           </Pressable>
           <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: C.ink }}>{total ? t('dayOf', { n: Math.max(n, 0), total }) : t('dayN', { n: Math.max(n, 0) })}</Text>
-            <Text style={{ fontSize: 13, color: C.muted }}>{day === today ? t('today') : fmtDate(day, lang, { weekday: true })}</Text>
+            <Text style={{ fontFamily: F.serif, fontSize: 19, lineHeight: 28, color: C.ink }}>{total ? t('dayOf', { n: Math.max(n, 0), total }) : t('dayN', { n: Math.max(n, 0) })}</Text>
+            <Text style={{ fontSize: 12, color: C.faint, letterSpacing: 0.4 }}>{day === today ? t('today') : fmtDate(day, lang, { weekday: true })}</Text>
           </View>
           <Pressable onPress={() => setDay(addDays(day, 1))} disabled={day >= today} accessibilityLabel="Next day"
-            style={{ width: 38, height: 38, borderRadius: 10, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center', opacity: day >= today ? 0.35 : 1 }}>
-            <Text style={{ fontSize: 20, color: C.ink }}>{next}</Text>
+            style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center', opacity: day >= today ? 0.3 : 1 }}>
+            <Text style={{ fontSize: 20, color: C.gold }}>{next}</Text>
           </Pressable>
         </View>
 
-        {future ? <T style={{ color: C.muted }}>{t('futureDay')}</T> : null}
-        {!goals.length ? <T style={{ color: C.muted }}>{t('noGoals')}</T> : null}
-        {habits.map((g) => <GoalRow key={g.id} goal={g} day={day} readOnly={future} />)}
+        <Divider />
+        {future ? <T style={{ color: C.muted, paddingTop: 12 }}>{t('futureDay')}</T> : null}
+        {!goals.length ? <T style={{ color: C.muted, paddingTop: 12 }}>{t('noGoals')}</T> : null}
+        <Rows list={habits} day={day} future={future} />
         {active.map((c) => {
           const cg = goals.filter((g) => g.challengeId === c.id);
           if (!cg.length) return null;
           return (
-            <View key={c.id} style={{ gap: 8, marginTop: 4 }}>
-              <T style={{ fontSize: 12, fontWeight: '700', color: C.gold, letterSpacing: 0.6 }}>
-                {t('challengeTag').toUpperCase()} · {(c.title[lang] || c.title.en)} · {t('dayOf', { n: diffDays(c.start, day) + 1, total: diffDays(c.start, c.end) + 1 })}
-              </T>
-              {cg.map((g) => <GoalRow key={g.id} goal={g} day={day} readOnly={future} />)}
+            <View key={c.id} style={{ marginTop: 6 }}>
+              <View style={{ borderTopWidth: 1, borderColor: C.line, paddingTop: 12 }}>
+                <Label>{t('challengeTag')} · {(c.title[lang] || c.title.en)} · {t('dayOf', { n: diffDays(c.start, day) + 1, total: diffDays(c.start, c.end) + 1 })}</Label>
+              </View>
+              <Rows list={cg} day={day} future={future} />
             </View>
           );
         })}
-        <T style={{ fontSize: 12, color: C.faint }}>{t('tapDone')}</T>
-        {day !== today ? <Button small kind="secondary" title={t('backToToday')} onPress={() => setDay(today)} /> : null}
+        <Divider />
+        <T center style={{ fontSize: 12, color: C.faint, paddingTop: 10, paddingBottom: day !== today ? 10 : 4 }}>{t('tapDone')}</T>
+        {day !== today ? <Button small kind="secondary" title={t('backToToday')} onPress={() => setDay(today)} style={{ marginBottom: 6 }} /> : null}
       </Card>
 
-      <Card style={{ backgroundColor: C.goldSoft, borderColor: 'transparent', gap: 8 }}>
-        <Text style={{ fontSize: 19, lineHeight: 34, color: C.ink, textAlign: 'center', writingDirection: 'rtl' }}>{h.ar}</Text>
-        {lang !== 'ar' ? <Text style={{ fontSize: 14, lineHeight: 21, color: C.muted, textAlign: 'center' }}>{h.en}</Text> : null}
-        <Text style={{ fontSize: 12, color: C.gold, textAlign: 'center' }}>{lang === 'ar' ? h.refAr : h.refEn}</Text>
-      </Card>
+      <View style={{ alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 14 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ width: 28, height: 1, backgroundColor: C.line }} />
+          <View style={{ width: 6, height: 6, backgroundColor: C.gold, transform: [{ rotate: '45deg' }] }} />
+          <View style={{ width: 28, height: 1, backgroundColor: C.line }} />
+        </View>
+        <Text style={{ fontFamily: F.serifRegular, fontSize: 21, lineHeight: 38, color: C.ink, textAlign: 'center', writingDirection: 'rtl' }}>{h.ar}</Text>
+        {lang !== 'ar' ? <Text style={{ fontSize: 14, lineHeight: 22, color: C.muted, textAlign: 'center', fontStyle: 'italic' }}>{h.en}</Text> : null}
+        <Text style={{ fontSize: 11, color: C.gold, textAlign: 'center', letterSpacing: 1.2 }}>{lang === 'ar' ? h.refAr : h.refEn}</Text>
+      </View>
     </ScrollView>
   );
 }

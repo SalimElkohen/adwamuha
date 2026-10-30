@@ -6,6 +6,7 @@ import { StoreProvider, useStore } from './src/lib/store';
 import { scheduleReminders } from './src/lib/notify';
 import { C } from './src/theme';
 import Lattice from './src/components/Lattice';
+import TabIcon from './src/components/TabIcon';
 import Splash, { MADINAH } from './src/screens/Splash';
 import Onboarding from './src/screens/Onboarding';
 import Today from './src/screens/Today';
@@ -14,10 +15,10 @@ import Challenges from './src/screens/Challenges';
 import Settings from './src/screens/Settings';
 
 const TABS = [
-  { key: 'today', label: 'tabToday', icon: '◉' },
-  { key: 'progress', label: 'tabProgress', icon: '◔' },
-  { key: 'challenges', label: 'tabChallenges', icon: '✦' },
-  { key: 'settings', label: 'tabSettings', icon: '≡' },
+  { key: 'today', label: 'tabToday' },
+  { key: 'progress', label: 'tabProgress' },
+  { key: 'challenges', label: 'tabChallenges' },
+  { key: 'settings', label: 'tabSettings' },
 ];
 
 function Main() {
@@ -40,14 +41,14 @@ function Main() {
     body = (
       <View style={{ flex: 1 }}>
         <View style={{ flex: 1 }}><Screen /></View>
-        <View style={{ flexDirection: 'row', borderTopWidth: 1, borderColor: C.line, backgroundColor: C.surface, paddingTop: 6, paddingBottom: 4 }}>
+        <View style={{ flexDirection: 'row', borderTopWidth: 1, borderColor: C.line, backgroundColor: C.bgDeep, paddingTop: 8, paddingBottom: 4 }}>
           {TABS.map((x) => {
             const on = tab === x.key;
             return (
               <Pressable key={x.key} onPress={() => setTab(x.key)} accessibilityRole="tab" accessibilityState={{ selected: on }}
-                style={{ flex: 1, alignItems: 'center', paddingVertical: 4, gap: 2 }}>
-                <Text style={{ fontSize: 18, color: on ? C.accent : C.faint }}>{x.icon}</Text>
-                <Text style={{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? C.accent : C.muted }}>{t(x.label)}</Text>
+                style={{ flex: 1, alignItems: 'center', paddingVertical: 2, gap: 4 }}>
+                <TabIcon name={x.key} color={on ? C.accent : C.faint} />
+                <Text style={{ fontSize: 11, letterSpacing: 0.3, fontWeight: on ? '600' : '400', color: on ? C.accent : C.faint }}>{t(x.label)}</Text>
               </Pressable>
             );
           })}
