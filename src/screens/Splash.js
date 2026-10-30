@@ -64,7 +64,7 @@ function archLength(xL, xR, ys, yb, k = 0.66) {
 }
 
 // The opening sequence, in milliseconds.
-export const INTRO = { total: 2300, pattern: [0, 700], arch: [200, 1300], inner: [450, 1300], fill: [700, 800], star: [1300, 450], text: 1400, brand: 1800, hold: 2000, swap: 1000, after: 1400 };
+export const INTRO = { total: 2300, pattern: [0, 700], arch: [200, 1300], inner: [450, 1300], fill: [700, 800], star: [1300, 450], text: 1400, brand: 1800, hold: 3000, swap: 1000, after: 3000 };
 // hadith fully shown at total; it stays `hold` ms, then gives way to the logo (`swap` ms); the app opens `after` ms later
 const OPEN_AT = INTRO.total + INTRO.hold + INTRO.swap + INTRO.after;
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
