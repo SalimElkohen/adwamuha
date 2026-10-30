@@ -63,7 +63,9 @@ function archLength(xL, xR, ys, yb, k = 0.66) {
 }
 
 // The opening sequence, in milliseconds.
-export const INTRO = { total: 2300, pattern: [0, 700], arch: [200, 1300], inner: [450, 1300], fill: [700, 800], star: [1300, 450], text: 1400, brand: 1800 };
+export const INTRO = { total: 2300, pattern: [0, 700], arch: [200, 1300], inner: [450, 1300], fill: [700, 800], star: [1300, 450], text: 1400, brand: 1800, hold: 2000, swap: 1000, after: 1400 };
+// hadith fully shown at total; it stays `hold` ms, then gives way to the logo (`swap` ms); the app opens `after` ms later
+const OPEN_AT = INTRO.total + INTRO.hold + INTRO.swap + INTRO.after;
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const ease = (v) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 const phase = (t, [start, dur]) => ease(clamp01((t - start) / dur));
@@ -116,13 +118,18 @@ export default function Splash({ onDone }) {
   const [size, setSize] = useState(null);
   const fade = useRef(new Animated.Value(0)).current;
   const brand = useRef(new Animated.Value(0)).current;
+  const swap = useRef(new Animated.Value(0)).current; // 0 = hadith, 1 = logo in the centre
   const [t, setT] = useState(0); // time into the opening sequence, ms
 
   useEffect(() => {
     let raf, alive = true;
     const run = (reduce) => {
       if (!alive) return;
-      if (reduce) { setT(INTRO.total); fade.setValue(1); brand.setValue(1); return; }
+      if (reduce) {
+        setT(INTRO.total); fade.setValue(1); brand.setValue(1);
+        Animated.timing(swap, { toValue: 1, duration: 400, delay: INTRO.hold, useNativeDriver: true }).start();
+        return;
+      }
       const t0 = Date.now();
       const tick = () => {
         if (!alive) return;
@@ -133,12 +140,13 @@ export default function Splash({ onDone }) {
       raf = requestAnimationFrame(tick);
       Animated.timing(fade, { toValue: 1, duration: 900, delay: INTRO.text, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
       Animated.timing(brand, { toValue: 1, duration: 700, delay: INTRO.brand, useNativeDriver: true }).start();
+      Animated.timing(swap, { toValue: 1, duration: INTRO.swap, delay: INTRO.total + INTRO.hold, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }).start();
     };
     Promise.resolve(AccessibilityInfo && AccessibilityInfo.isReduceMotionEnabled ? AccessibilityInfo.isReduceMotionEnabled() : false)
       .then(run, () => run(false));
-    const id = setTimeout(onDone, 8000);
+    const id = setTimeout(onDone, OPEN_AT);
     return () => { alive = false; cancelAnimationFrame(raf); clearTimeout(id); };
-  }, [onDone, fade, brand]);
+  }, [onDone, fade, brand, swap]);
 
   let body = null;
   if (size) {
@@ -154,10 +162,14 @@ export default function Splash({ onDone }) {
     const span = xR - xL, r = span * 0.66, dy = Math.max(0, ys - (top + 6));
     const edge = dy > 0 ? xL + r - Math.sqrt(Math.max(0, r * r - dy * dy)) : xL;
     const inset = Math.max(xL + 18, edge + 12);
+    const LOGO_H = 52;
+    const logoTop = H - 40 - LOGO_H; // resting place under the arch
+    const centre = top + (yb - top) * 0.42; // optical centre of the niche
+    const logoRise = centre - (logoTop + LOGO_H / 2);
     body = (
       <>
         <Backdrop W={W} H={H} arch={arch} t={t} />
-        <Animated.View style={{ position: 'absolute', left: inset, right: inset, top, bottom: H - yb + 14, justifyContent: 'center', gap: (short ? 20 : 14) * s, opacity: fade, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }}>
+        <Animated.View style={{ position: 'absolute', left: inset, right: inset, top, bottom: H - yb + 14, justifyContent: 'center', gap: (short ? 20 : 14) * s, opacity: Animated.multiply(fade, swap.interpolate({ inputRange: [0, 0.45], outputRange: [1, 0], extrapolate: 'clamp' })), transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }}>
           <Text style={{ fontFamily: 'Amiri-Regular', fontSize: (short ? 32 : 23) * s, lineHeight: (short ? 62 : 46) * s, color: M.ink, textAlign: 'center', writingDirection: 'rtl' }}>{WELCOME.ar}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <View style={{ width: 34, height: 1, backgroundColor: M.goldSoft }} />
@@ -169,10 +181,17 @@ export default function Splash({ onDone }) {
           ) : null}
           <Text style={{ fontFamily: 'Amiri-Regular', fontSize: (short ? 15 : 13.5) * s, color: M.gold, textAlign: 'center', letterSpacing: ar ? 0 : 0.6 }}>{ar ? WELCOME.refAr : WELCOME.refEn}</Text>
         </Animated.View>
-        <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 20, alignItems: 'center', gap: 2, opacity: brand }}>
+        {/* the logo starts at the bottom, then rises to the centre of the arch and grows */}
+        <Animated.View style={{ position: 'absolute', left: 0, right: 0, top: logoTop, height: LOGO_H, alignItems: 'center', justifyContent: 'center', opacity: brand,
+          transform: [
+            { translateY: swap.interpolate({ inputRange: [0, 1], outputRange: [0, logoRise] }) },
+            { scale: swap.interpolate({ inputRange: [0, 1], outputRange: [1, 2.3] }) },
+          ] }}>
           <Text style={{ fontFamily: 'Amiri-Bold', fontSize: 24, color: M.gold, lineHeight: 34 }}>أدومها</Text>
           <Text style={{ fontSize: 11, letterSpacing: 3.5, color: M.domeDeep, fontWeight: '600' }}>ADWAMUHĀ</Text>
-          <Text style={{ fontSize: 11, color: M.inkSoft, opacity: 0.7, marginTop: 8 }}>{tr('tapToContinue')}</Text>
+        </Animated.View>
+        <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 18, alignItems: 'center', opacity: brand }}>
+          <Text style={{ fontSize: 11, color: M.inkSoft, opacity: 0.7 }}>{tr('tapToContinue')}</Text>
         </Animated.View>
       </>
     );
