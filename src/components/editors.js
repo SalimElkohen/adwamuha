@@ -182,7 +182,7 @@ export function CatalogRows({ items, selected, onToggle }) {
   return items.map((c, i) => {
     const on = selected.includes(c.id);
     const unit = lang === 'ar' ? c.unitAr : c.unitEn;
-    const sub = [c.target ? c.target + (unit ? ' ' + unit : '') : null, c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
+    const sub = [c.target ? c.target + (unit ? ' ' + unit : '') : null, c.weekInUnit ? null : c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
     return (
       <View key={c.id}>
         {i > 0 ? <Divider /> : null}

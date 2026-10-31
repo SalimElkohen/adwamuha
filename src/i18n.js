@@ -293,11 +293,11 @@ export function goalTitle(goal, lang, catalogItem) {
 export function goalDetail(goal, lang, catalogItem, t) {
   const parts = [];
   let target = goal.target, unit = goal.unit;
-  if (goal.catalogId && !unit) {
-    const c = catalogItem(goal.catalogId);
-    if (c) unit = lang === 'ar' ? c.unitAr : c.unitEn;
-  }
+  const c = goal.catalogId ? catalogItem(goal.catalogId) : null;
+  if (c && !unit) unit = lang === 'ar' ? c.unitAr : c.unitEn;
   if (target) parts.push(target + (unit ? ' ' + unit : ''));
+  // "10 pages a week": the unit already names the week, unless the user changed how often
+  if (c && c.weekInUnit && target && goal.freq === 'weekly' && (goal.perWeek || 1) === 1 && (!goal.unit || goal.unit === c.unitEn || goal.unit === c.unitAr)) return parts.join(' · ');
   parts.push(goal.freq === 'weekly' ? t('perWeek', { n: goal.perWeek || 1 }) : t('daily'));
   return parts.join(' · ');
 }
