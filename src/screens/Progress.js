@@ -4,13 +4,14 @@ import { C, tone } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H1, Card, Label, Ring } from '../components/ui';
 import { addDays, diffDays, hijriOf, HIJRI_MONTHS, monthShort, rangeKeys, todayKey, fromKey } from '../lib/dates';
-import { constancy, dayFraction, goalScore, goalStreak, isActiveOn, mark, goalStart } from '../lib/stats';
+import { constancy, dayFraction, excusedFor, goalScore, goalStreak, isActiveOn, mark, goalStart } from '../lib/stats';
 import { catalogItem } from '../data/catalog';
 import { goalTitle } from '../i18n';
 import { setName } from '../lib/sets';
 import { F } from '../theme';
 
 const CELL = 12, GAP = 2, NAME_W = 118;
+const EXCUSED = 'rgba(201,218,207,0.38)'; // soft grey-green: excused day
 
 // one table for a group of goals (a set or a challenge)
 function Grid({ goals }) {
@@ -81,7 +82,8 @@ function Grid({ goals }) {
                 const active = isActiveOn(r.goal, state, k);
                 const m = mark(state, r.goal.id, k);
                 const fut = k > today;
-                const bg = !active ? 'transparent' : m === 'd' ? C.accent : m === 'x' ? C.miss : fut ? 'transparent' : C.empty;
+                const exc = active && m !== 'd' && excusedFor(state, r.goal, k);
+                const bg = !active ? 'transparent' : m === 'd' ? C.accent : exc ? EXCUSED : m === 'x' ? C.miss : fut ? 'transparent' : C.empty;
                 return (
                   <Pressable key={k} disabled={!active || fut} onPress={() => actions.cycleMark(r.goal.id, k)}
                     style={{ width: CELL, height: 22, marginRight: GAP, borderRadius: 2, backgroundColor: bg, borderWidth: active && fut ? 1 : 0, borderColor: C.line }} />
@@ -91,7 +93,7 @@ function Grid({ goals }) {
           ))}
           <View style={{ flexDirection: 'row', height: 22, marginTop: 6 }}>
             {days.map((k) => {
-              const daily = goals.filter((g) => g.freq !== 'weekly' && isActiveOn(g, state, k));
+              const daily = goals.filter((g) => g.freq !== 'weekly' && isActiveOn(g, state, k) && !excusedFor(state, g, k));
               const f = daily.length ? daily.filter((g) => mark(state, g.id, k) === 'd').length / daily.length : null;
               const fut = k > today;
               return <View key={k} style={{ width: CELL, height: 22, marginRight: GAP, borderRadius: 3, backgroundColor: f == null || fut ? 'transparent' : C.empty, overflow: 'hidden', justifyContent: 'flex-end' }}>
@@ -174,7 +176,7 @@ export default function Progress() {
       ))}
       <View style={{ paddingHorizontal: 4, gap: 6 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-          {[[C.accent, t('legendDone')], [C.miss, t('legendMissed')], [C.empty, t('legendOpen')]].map(([c, l]) => (
+          {[[C.accent, t('legendDone')], [C.miss, t('legendMissed')], [EXCUSED, t('legendExcused')], [C.empty, t('legendOpen')]].map(([c, l]) => (
             <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: c }} />
               <Text style={{ fontSize: 12, color: C.muted }}>{l}</Text>

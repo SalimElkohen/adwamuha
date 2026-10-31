@@ -12,6 +12,32 @@ const en = {
   pickGoalsHint: 'Start with a few. The most beloved deeds are the constant ones, even if small.',
   tooMany: 'That is a lot to start with. Consider beginning with 3 to 5 and adding more later.',
   muslimPack: 'Worship',
+  excuseAll: 'Travelling or ill today',
+  excuseAllPast: 'Travelling or ill this day',
+  excusedAllTitle: 'Travelling or ill',
+  excusedHadith: '“When a servant falls ill or travels, the like of what he used to do while at home and healthy is written for him.”',
+  excusedRef: 'Sahih al-Bukhari 2996',
+  excusedBody: 'Your streak is kept, and this day does not count against you.',
+  excusedLine: 'Excused',
+  undo: 'Undo',
+  legendExcused: 'Excused',
+  milestoneTitle: '{n} · {goal}',
+  restartTitle: 'Begin again today',
+  restartBody: 'Your best streak: {n}. You can beat it.',
+  rajabTitle: 'Rajab begins tomorrow',
+  rajabBody: 'One of the four sacred months.',
+  rajabQuote: '“…of them, four are sacred.”',
+  rajabRef: 'At-Tawba 9:36',
+  shabanTitle: 'Shaʿbān begins tomorrow',
+  shabanQuote: '“I never saw him fast more in any month than in Shaʿbān.”',
+  shabanRef: 'Sahih al-Bukhari 1969',
+  ramadanTitle: 'Ramadan begins tomorrow · رمضان مبارك',
+  seasonSummary: 'Your constancy so far: {list}. Best streak: {best}.',
+  growTitle: 'Ready for a little more?',
+  growBody: 'You kept {goal} at 90% or more for 30 days.',
+  growStep: '{from} → {to} {unit}',
+  growYes: 'Increase',
+  growLater: 'Not now',
   setWorship: 'Worship',
   setStrong: 'The strong believer',
   setStrongHadith: '“The strong believer is better and more beloved to Allah than the weak believer, and in each there is good.”',
@@ -149,6 +175,32 @@ const ar = {
   pickGoalsHint: 'ابدأ بالقليل. أحب الأعمال إلى الله أدومها وإن قل.',
   tooMany: 'هذا كثير للبداية. ابدأ بثلاثة إلى خمسة أهداف وأضف لاحقًا.',
   muslimPack: 'العبادات',
+  excuseAll: 'مسافر أو مريض اليوم',
+  excuseAllPast: 'مسافر أو مريض في هذا اليوم',
+  excusedAllTitle: 'مسافر أو مريض',
+  excusedHadith: '«إذا مَرِضَ العَبدُ أو سافَرَ كُتِبَ له مِثلُ ما كان يَعمَلُ مُقيمًا صَحيحًا»',
+  excusedRef: 'صحيح البخاري ٢٩٩٦',
+  excusedBody: 'سلسلتك محفوظة، ولا يُحتسب هذا اليوم عليك.',
+  excusedLine: 'معذور',
+  undo: 'تراجع',
+  legendExcused: 'معذور',
+  milestoneTitle: '{n} · {goal}',
+  restartTitle: 'ابدأ من جديد اليوم',
+  restartBody: 'أفضل سلسلة لك: {n}. يمكنك أن تتجاوزها.',
+  rajabTitle: 'غدًا يبدأ شهر رجب',
+  rajabBody: 'أحد الأشهر الحرم الأربعة.',
+  rajabQuote: '﴿مِنْهَا أَرْبَعَةٌ حُرُمٌ﴾',
+  rajabRef: 'التوبة: ٣٦',
+  shabanTitle: 'غدًا يبدأ شهر شعبان',
+  shabanQuote: '«وما رأيتُه أكثرَ صيامًا منه في شعبان»',
+  shabanRef: 'صحيح البخاري ١٩٦٩',
+  ramadanTitle: 'غدًا يبدأ رمضان · رمضان مبارك',
+  seasonSummary: 'مداومتك حتى الآن: {list}. أفضل سلسلة: {best}.',
+  growTitle: 'مستعد لزيادة قليلة؟',
+  growBody: 'داومت على {goal} بنسبة ٩٠٪ أو أكثر لمدة ٣٠ يومًا.',
+  growStep: '{from} ← {to} {unit}',
+  growYes: 'زِد',
+  growLater: 'ليس الآن',
   setWorship: 'العبادات',
   setStrong: 'المؤمن القويّ',
   setStrongHadith: '«المؤمنُ القويُّ خيرٌ وأحبُّ إلى اللهِ من المؤمنِ الضعيفِ، وفي كلٍّ خيرٌ»',
@@ -275,6 +327,12 @@ export function makeT(lang) {
   return (key, vars) => {
     // Arabic needs its own forms for one and two (مرة / مرتان)
     if (key === 'perWeek' && vars && (vars.n === 1 || vars.n === 2)) key = 'perWeek' + vars.n;
+    if (key === 'streakDays' && vars && vars.n === 1) return lang === 'ar' ? 'يوم واحد متتالٍ' : '1 day in a row';
+    if (key === 'nDays') {
+      const n = vars.n;
+      if (lang === 'ar') return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n <= 10 ? n + ' أيام' : n + ' يومًا';
+      return n === 1 ? '1 day' : n + ' days';
+    }
     let s = d[key] != null ? d[key] : en[key] != null ? en[key] : key;
     if (vars) Object.keys(vars).forEach((k) => { s = s.split('{' + k + '}').join(String(vars[k])); });
     return s;

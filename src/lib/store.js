@@ -21,6 +21,9 @@ export function initialState() {
     reminders: { morning: true, evening: true, morningTime: '05:00', eveningTime: '18:00' },
     challenges: [], // { id, title:{en,ar}, start, end, goalIds }
     history: [], // { id, title, start, end, pct, finishedAt }
+    excused: {}, // { 'YYYY-MM-DD': 'all' } – travelling or ill
+    seen: {}, // cards already shown and closed (milestones, seasons, restarts)
+    growSnooze: {}, // { goalId: 'YYYY-MM-DD' } – ask again after this day
   };
 }
 
@@ -62,6 +65,14 @@ export function StoreProvider({ children }) {
     setReminders: (r) => update((s) => ({ ...s, reminders: { ...s.reminders, ...r } })),
     finishOnboarding: ({ lang, sets, goals, period, hijriAdjust, reminders }) =>
       update((s) => ({ ...s, lang, sets, goals, period, hijriAdjust, reminders: { ...s.reminders, ...reminders }, onboarded: true })),
+    setExcused: (key, kind) =>
+      update((s) => {
+        const excused = { ...(s.excused || {}) };
+        if (kind) excused[key] = kind; else delete excused[key];
+        return { ...s, excused };
+      }),
+    dismiss: (key) => update((s) => ({ ...s, seen: { ...(s.seen || {}), [key]: true } })),
+    snoozeGrow: (goalId, until) => update((s) => ({ ...s, growSnooze: { ...(s.growSnooze || {}), [goalId]: until } })),
     renameSet: (id, name) => update((s) => ({ ...s, sets: s.sets.map((x) => (x.id === id ? { ...x, name } : x)) })),
     addSet: () =>
       update((s) => {

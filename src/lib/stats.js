@@ -16,6 +16,10 @@ export function isActiveOn(goal, state, key) {
   const b = goalEnd(goal, state);
   return key >= a && (!b || key <= b);
 }
+// Excused days (Bukhari 2996): a day marked travelling or ill counts as kept for every goal.
+export function excusedFor(state, goal, key) {
+  return !!(state.excused && state.excused[key] === 'all');
+}
 export function activeGoals(state, key) {
   return state.goals.filter((g) => isActiveOn(g, state, key));
 }
@@ -32,7 +36,7 @@ export function weekBlock(goal, state, key) {
   let be = addDays(bs, 6);
   const end = goalEnd(goal, state);
   if (end && be > end) be = end;
-  const len = diffDays(bs, be) + 1;
+  const len = rangeKeys(bs, be).filter((k) => !excusedFor(state, goal, k)).length; // excused days lower the week's target
   const target = Math.min(goal.perWeek || 1, Math.ceil(((goal.perWeek || 1) * len) / 7));
   let done = 0;
   rangeKeys(bs, be).forEach((k) => {
@@ -60,10 +64,12 @@ export function goalScore(goal, state, today) {
     }
     return { done, expected, pct: expected ? (100 * done) / expected : null };
   }
-  let done = 0;
-  const days = diffDays(a, b) + 1;
+  let done = 0, days = 0;
   rangeKeys(a, b).forEach((k) => {
-    if (mark(state, goal.id, k) === 'd') done++;
+    const d = mark(state, goal.id, k) === 'd';
+    if (excusedFor(state, goal, k) && !d) return; // an excused day does not count against
+    days++;
+    if (d) done++;
   });
   return { done, expected: days, pct: days ? (100 * done) / days : null };
 }
@@ -81,9 +87,30 @@ export function constancy(state, today, goals) {
 // Days in a row (ending today, or yesterday if today is not finished yet) on which every
 // daily goal active that day was done.
 export function dayComplete(state, key) {
-  const daily = activeGoals(state, key).filter((g) => g.freq !== 'weekly');
-  if (!daily.length) return null;
+  const all = activeGoals(state, key).filter((g) => g.freq !== 'weekly');
+  const daily = all.filter((g) => !excusedFor(state, g, key));
+  if (!daily.length) return all.length && state.excused && state.excused[key] ? true : null; // fully excused: kept
   return daily.every((g) => mark(state, g.id, key) === 'd');
+}
+// consecutive complete days ending exactly on `end` (days without daily goals are skipped)
+export function streakEnding(state, end) {
+  let k = end, n = 0;
+  for (let i = 0; i < 2000 && k >= state.period.start; i++) {
+    const c = dayComplete(state, k);
+    if (c === true) n++;
+    else if (c === false) break;
+    k = addDays(k, -1);
+  }
+  return n;
+}
+export function bestStreak(state, today) {
+  let best = 0, run = 0;
+  rangeKeys(state.period.start, today).forEach((k) => {
+    const c = dayComplete(state, k);
+    if (c === true) { run++; if (run > best) best = run; }
+    else if (c === false && k !== today) run = 0;
+  });
+  return best;
 }
 export function streak(state, today) {
   let k = today;
@@ -103,7 +130,7 @@ export function goalStreak(goal, state, today) {
   let k = mark(state, goal.id, today) === 'd' ? today : addDays(today, -1);
   const a = goalStart(goal, state);
   let n = 0;
-  while (k >= a && mark(state, goal.id, k) === 'd') { n++; k = addDays(k, -1); }
+  while (k >= a && (mark(state, goal.id, k) === 'd' || excusedFor(state, goal, k))) { n++; k = addDays(k, -1); }
   return n;
 }
 export function dayFraction(state, key) {

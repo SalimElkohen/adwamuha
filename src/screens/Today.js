@@ -2,15 +2,19 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F, tone } from '../theme';
 import { useStore } from '../lib/store';
-import { T, H1, Card, Divider, Label, Button } from '../components/ui';
+import { T, H1, Card, Chip, Divider, Label, Button } from '../components/ui';
 import { addDays, diffDays, fmtDate, hijriText, todayKey } from '../lib/dates';
-import { activeGoals, constancy, goalScore, goalStreak, mark, streak, weekBlock } from '../lib/stats';
+import { activeGoals, bestStreak, constancy, excusedFor, goalScore, goalStreak, mark, streak, weekBlock } from '../lib/stats';
+import { growCard, milestoneCards, restartCard, seasonCard } from '../lib/motivation';
+import { HADITH, WELCOME } from '../data/hadith';
 import { catalogItem } from '../data/catalog';
 import { goalTitle, goalDetail } from '../i18n';
 import { hadithForDay } from '../data/hadith';
 import { setName } from '../lib/sets';
 
 function GoalRow({ goal, day, readOnly, alsoIn }) {
+  const { state: st0 } = useStore();
+  const exc = excusedFor(st0, goal, day);
   const { state, actions, t } = useStore();
   const lang = state.lang;
   const today = todayKey();
@@ -26,8 +30,9 @@ function GoalRow({ goal, day, readOnly, alsoIn }) {
     if (s > 0) sub = sub + ' · ✦ ' + s;
   }
   const done = m === 'd', miss = m === 'x';
+  if (exc && !done) sub = t('excusedLine');
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', opacity: met && !done ? 0.75 : 1 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', opacity: exc && !done ? 0.45 : met && !done ? 0.75 : 1 }}>
       <Pressable disabled={readOnly} onPress={() => actions.toggleMark(goal.id, day, 'd')} accessibilityRole="button" accessibilityState={{ checked: done }}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14 }}>
         <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1.5,
@@ -40,11 +45,33 @@ function GoalRow({ goal, day, readOnly, alsoIn }) {
           <T style={{ fontSize: 13, lineHeight: 18, color: met ? C.gold : C.faint }}>{sub}{alsoIn ? <Text style={{ color: C.gold }}>{'  ◆ ' + alsoIn}</Text> : null}</T>
         </View>
       </Pressable>
-      <Pressable disabled={readOnly} onPress={() => actions.toggleMark(goal.id, day, 'x')} accessibilityRole="button" accessibilityLabel="Not done" hitSlop={8}
+      <Pressable disabled={readOnly || exc} onPress={() => actions.toggleMark(goal.id, day, 'x')} accessibilityRole="button" accessibilityLabel="Not done" hitSlop={8}
         style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: miss ? C.miss : C.divider, alignItems: 'center', justifyContent: 'center', marginHorizontal: 4 }}>
         <Text style={{ fontSize: 11, color: miss ? C.miss : C.faint }}>✕</Text>
       </Pressable>
     </View>
+  );
+}
+
+const EXCUSE_AR = '«إذا مَرِضَ العَبدُ أو سافَرَ كُتِبَ له مِثلُ ما كان يَعمَلُ مُقيمًا صَحيحًا»';
+
+function Callout({ title, quote, refText, body, onClose, children }) {
+  const { rtl } = useStore();
+  return (
+    <Card style={{ borderColor: C.accent, backgroundColor: C.bgDeep, gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+        <T style={{ flex: 1, fontFamily: F.serif, fontSize: 19, lineHeight: 28 }}>{title}</T>
+        {onClose ? (
+          <Pressable onPress={onClose} hitSlop={10} accessibilityLabel="Close" style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: C.faint, fontSize: 11 }}>✕</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      {quote ? <Text style={{ fontFamily: F.serifRegular, fontSize: 17, lineHeight: 30, color: C.gold, textAlign: rtl ? 'right' : 'left' }}>{quote}</Text> : null}
+      {refText ? <T style={{ fontSize: 11, color: C.faint, letterSpacing: 0.4 }}>{refText}</T> : null}
+      {body ? <T style={{ fontSize: 14, lineHeight: 21, color: C.muted }}>{body}</T> : null}
+      {children}
+    </Card>
   );
 }
 
@@ -80,6 +107,21 @@ export default function Today() {
   const h = hadithForDay(diffDays('2020-01-01', day));
   const future = day > today;
   const prev = rtl ? '›' : '‹', next = rtl ? '‹' : '›';
+  const excuse = (state.excused || {})[day] || null;
+  const season = seasonCard(state, today);
+  const restart = restartCard(state, today);
+  const restartH = HADITH.find((x) => x.id === 'tuteeqoon') || h;
+  const miles = milestoneCards(state, today);
+  const grow = growCard(state, today);
+  // at most two cards at a time, in this order; closing one lets the next appear
+  const cardOrder = [season && 'season', restart && 'restart', ...miles.map((mc) => mc.key), grow && 'grow'].filter(Boolean).slice(0, 2);
+  const showCard = (k) => day === today && cardOrder.includes(k);
+  const growItem = grow ? catalogItem(grow.goal.catalogId) : null;
+  const growUnit = grow ? grow.goal.unit || (growItem ? (lang === 'ar' ? growItem.unitAr : growItem.unitEn) : '') : '';
+  const setScores = sets.map((x) => {
+    const sc = constancy(state, today, state.goals.filter((g) => !g.archived && !g.challengeId && setOf(g) === x.id));
+    return setName(x, t) + ' ' + (sc.pct == null ? '—' : Math.round(sc.pct) + '%');
+  }).join(' · ');
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
@@ -103,6 +145,44 @@ export default function Today() {
           <T center style={{ fontSize: 12, color: C.faint, lineHeight: 16 }}>{t('streakDays', { n: st })}</T>
         </View>
       </Card>
+
+      {!future && started ? (
+        excuse ? (
+          <Callout title={t('excusedAllTitle')} quote={EXCUSE_AR}
+            refText={t('excusedRef')} body={(lang !== 'ar' ? t('excusedHadith') + ' ' : '') + t('excusedBody')}>
+            <Button small kind="secondary" title={t('undo')} onPress={() => actions.setExcused(day, null)} style={{ alignSelf: 'flex-start', paddingHorizontal: 18 }} />
+          </Callout>
+        ) : (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <Chip label={'✈︎  ' + t(day === today ? 'excuseAll' : 'excuseAllPast')} onPress={() => actions.setExcused(day, 'all')} />
+          </View>
+        )
+      ) : null}
+
+      {season && showCard('season') ? (
+        <Callout onClose={() => actions.dismiss(season.key)}
+          title={t(season.month === 7 ? 'rajabTitle' : season.month === 8 ? 'shabanTitle' : 'ramadanTitle')}
+          quote={season.month === 7 ? '﴿مِنْهَا أَرْبَعَةٌ حُرُمٌ﴾' : season.month === 8 ? '«وما رأيتُه أكثرَ صيامًا منه في شعبان»' : null}
+          refText={season.month === 7 ? t('rajabRef') : season.month === 8 ? t('shabanRef') : null}
+          body={[season.month === 7 ? t('rajabBody') : null, season.month !== 7 ? t('seasonSummary', { list: setScores, best: t('nDays', { n: bestStreak(state, today) }) }) : null].filter(Boolean).join(' ')} />
+      ) : null}
+      {restart && showCard('restart') ? (
+        <Callout onClose={() => actions.dismiss(restart.key)} title={t('restartTitle')} quote={restartH.ar} refText={lang === 'ar' ? restartH.refAr : restartH.refEn}
+          body={t('restartBody', { n: t('nDays', { n: restart.best }) })} />
+      ) : null}
+      {miles.filter((mc) => showCard(mc.key)).map((mc) => (
+        <Callout key={mc.key} onClose={() => actions.dismiss(mc.key)} title={'✦ ' + t('milestoneTitle', { n: t('nDays', { n: mc.n }), goal: goalTitle(mc.goal, lang, catalogItem) })}
+          quote={'«' + WELCOME.ar + '»'} refText={lang === 'ar' ? WELCOME.refAr : WELCOME.refEn} />
+      ))}
+      {grow && showCard('grow') ? (
+        <Callout title={t('growTitle')} body={t('growBody', { goal: goalTitle(grow.goal, lang, catalogItem) })}>
+          <Text style={{ fontFamily: F.serif, fontSize: 22, color: C.gold, textAlign: 'center', paddingVertical: 4 }}>{t('growStep', { from: grow.from, to: grow.to, unit: growUnit })}</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button small kind="secondary" title={t('growLater')} onPress={() => actions.snoozeGrow(grow.goal.id, addDays(today, 30))} style={{ flex: 1 }} />
+            <Button small title={t('growYes')} onPress={() => { actions.updateGoal(grow.goal.id, { target: grow.to }); actions.snoozeGrow(grow.goal.id, addDays(today, 30)); }} style={{ flex: 1 }} />
+          </View>
+        </Callout>
+      ) : null}
 
       {ended.map((c) => {
         const gs = state.goals.filter((g) => c.goalIds.includes(g.id) || (c.linkedIds || []).includes(g.id)).map((g) => ({ ...g, start: c.start, end: c.end, challengeId: c.id }));
