@@ -327,7 +327,11 @@ export function makeT(lang) {
   return (key, vars) => {
     // Arabic needs its own forms for one and two (مرة / مرتان)
     if (key === 'perWeek' && vars && (vars.n === 1 || vars.n === 2)) key = 'perWeek' + vars.n;
-    if (key === 'streakDays' && vars && vars.n === 1) return lang === 'ar' ? 'يوم واحد متتالٍ' : '1 day in a row';
+    if (key === 'streakDays' && vars) {
+      const n = vars.n;
+      if (lang === 'ar') return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان متتاليان' : n >= 3 && n <= 10 ? n + ' أيام متتالية' : n + ' يومًا متتاليًا';
+      if (n === 1) return '1 day in a row';
+    }
     if (key === 'nDays') {
       const n = vars.n;
       if (lang === 'ar') return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n <= 10 ? n + ' أيام' : n + ' يومًا';
@@ -353,7 +357,7 @@ export function goalDetail(goal, lang, catalogItem, t) {
   let target = goal.target, unit = goal.unit;
   const c = goal.catalogId ? catalogItem(goal.catalogId) : null;
   if (c && !unit) unit = lang === 'ar' ? c.unitAr : c.unitEn;
-  if (target) parts.push(target + (unit ? ' ' + unit : ''));
+  if (target || unit) parts.push([target, unit].filter(Boolean).join(' ')); // a number, a detail, or both
   // "10 pages a week": the unit already names the week, unless the user changed how often
   if (c && c.weekInUnit && target && goal.freq === 'weekly' && (goal.perWeek || 1) === 1 && (!goal.unit || goal.unit === c.unitEn || goal.unit === c.unitAr)) return parts.join(' · ');
   parts.push(goal.freq === 'weekly' ? t('perWeek', { n: goal.perWeek || 1 }) : t('daily'));

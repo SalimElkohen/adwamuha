@@ -8,6 +8,7 @@ import { SET_IDS, defaultName } from '../lib/sets';
 import Logo from '../components/Logo';
 import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
 import { todayKey } from '../lib/dates';
+import { goalDetail } from '../i18n';
 
 export default function Onboarding() {
   const { state, actions, t } = useStore();
@@ -98,7 +99,10 @@ export default function Onboarding() {
               <View key={g.id}>
                 <Divider />
                 <Pressable onPress={() => setCustom((c) => c.filter((x) => x.id !== g.id))} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 13 }}>
-                  <T style={{ flex: 1, fontWeight: '600' }}>{g.name}</T>
+                  <View style={{ flex: 1 }}>
+                    <T style={{ fontWeight: '600' }}>{g.name}</T>
+                    <T style={{ fontSize: 13, color: C.faint, marginTop: 1 }}>{goalDetail(g, lang, catalogItem, t)}</T>
+                  </View>
                   <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ color: C.onAccent, fontWeight: '800', fontSize: 13 }}>✓</Text>
                   </View>
