@@ -31,11 +31,33 @@ jobs:
         run: |
           printf '%s\n' "$ASC_KEY_P8" | tr -d '\r' > "$RUNNER_TEMP/asc.p8"
           grep -q "BEGIN PRIVATE KEY" "$RUNNER_TEMP/asc.p8" || { echo "ASC_KEY_P8 secret is missing or incomplete"; exit 1; }
+      - name: Create signing certificate and profile (App Store Connect API)
+        env:
+          ASC_KEY_PATH: ${{ runner.temp }}/asc.p8
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          BUNDLE_ID: com.adwamuha.app
+        run: |
+          pip install --quiet pyjwt cryptography requests
+          python scripts/ios_signing.py setup "$RUNNER_TEMP"
+      - name: Point EAS at these credentials and the API key
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          jq --arg p "$RUNNER_TEMP/asc.p8" --arg k "$ASC_KEY_ID" --arg i "$ASC_ISSUER_ID" --arg t "$APPLE_TEAM_ID" \
+            '.build.production.credentialsSource = "local"
+             | .submit.production.ios += {ascApiKeyPath: $p, ascApiKeyId: $k, ascApiKeyIssuerId: $i, appleTeamId: $t}' \
+            eas.json > eas.tmp && mv eas.tmp eas.json
       - name: Build on EAS and submit to App Store Connect
         env:
-          EXPO_ASC_API_KEY_PATH: ${{ runner.temp }}/asc.p8
-          EXPO_ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          EXPO_ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          EXPO_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          EXPO_APPLE_TEAM_TYPE: INDIVIDUAL
+          EAS_BUILD_NO_EXPO_GO_WARNING: "true"
         run: eas build --platform ios --profile production --non-interactive --auto-submit
+      - name: Remove the CI provisioning profile
+        if: always()
+        env:
+          ASC_KEY_PATH: ${{ runner.temp }}/asc.p8
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: python scripts/ios_signing.py cleanup "$RUNNER_TEMP"
