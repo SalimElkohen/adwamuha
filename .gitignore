@@ -8,3 +8,4 @@ credentials.json
 *.p8
 *.p12
 *.mobileprovision
+__pycache__/
