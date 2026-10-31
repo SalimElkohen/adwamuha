@@ -4,7 +4,7 @@ import { C, F, tone } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H1, Card, Chip, Divider, Label, Button } from '../components/ui';
 import { addDays, diffDays, fmtDate, hijriText, todayKey } from '../lib/dates';
-import { activeGoals, bestStreak, constancy, excusedFor, goalScore, goalStreak, mark, streak, weekBlock } from '../lib/stats';
+import { activeGoals, bestStreak, constancy, excusedFor, goalDays, goalScore, goalStreak, mark, onItsDay, streak, weekBlock, weekday } from '../lib/stats';
 import { growCard, milestoneCards, restartCard, seasonCard } from '../lib/motivation';
 import { HADITH, WELCOME } from '../data/hadith';
 import { catalogItem } from '../data/catalog';
@@ -21,7 +21,14 @@ function GoalRow({ goal, day, readOnly, alsoIn }) {
   const m = mark(state, goal.id, day);
   let sub = goalDetail(goal, lang, catalogItem, t);
   let met = false;
-  if (goal.freq === 'weekly') {
+  let byMonday = false; // already done on another day this week: shown as done, cannot be changed
+  if (goalDays(goal)) {
+    const other = weekBlock(goal, state, day).sched.find((k) => k !== day && mark(state, goal.id, k) === 'd');
+    if (other && m !== 'd') {
+      byMonday = true;
+      sub = t('fastDoneOn', { day: t('weekdays').split(',')[weekday(other)] });
+    }
+  } else if (goal.freq === 'weekly') {
     const b = weekBlock(goal, state, day);
     met = b.done >= b.target && m !== 'd';
     sub = met ? '✓ ' + t('goalReached') + ' · ' + b.done + '/' + b.target : sub + ' · ' + t('thisWeek', { d: b.done, t: b.target });
@@ -29,11 +36,11 @@ function GoalRow({ goal, day, readOnly, alsoIn }) {
     const s = goalStreak(goal, state, day <= today ? day : today);
     if (s > 0) sub = sub + ' · ✦ ' + s;
   }
-  const done = m === 'd', miss = m === 'x';
+  const done = m === 'd' || byMonday, miss = m === 'x';
   if (exc && !done) sub = t('excusedLine');
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', opacity: exc && !done ? 0.45 : met && !done ? 0.75 : 1 }}>
-      <Pressable disabled={readOnly} onPress={() => actions.toggleMark(goal.id, day, 'd')} accessibilityRole="button" accessibilityState={{ checked: done }}
+      <Pressable disabled={readOnly || byMonday} onPress={() => actions.toggleMark(goal.id, day, 'd')} accessibilityRole="button" accessibilityState={{ checked: done }}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14 }}>
         <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1.5,
           borderColor: done ? C.accent : miss ? C.miss : met ? C.gold : C.faint,
@@ -45,7 +52,7 @@ function GoalRow({ goal, day, readOnly, alsoIn }) {
           <T style={{ fontSize: 13, lineHeight: 18, color: met ? C.gold : C.faint }}>{sub}{alsoIn ? <Text style={{ color: C.gold }}>{'  ◆ ' + alsoIn}</Text> : null}</T>
         </View>
       </Pressable>
-      <Pressable disabled={readOnly || exc} onPress={() => actions.toggleMark(goal.id, day, 'x')} accessibilityRole="button" accessibilityLabel="Not done" hitSlop={8}
+      <Pressable disabled={readOnly || exc || byMonday} onPress={() => actions.toggleMark(goal.id, day, 'x')} accessibilityRole="button" accessibilityLabel="Not done" hitSlop={8}
         style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: miss ? C.miss : C.divider, alignItems: 'center', justifyContent: 'center', marginHorizontal: 4 }}>
         <Text style={{ fontSize: 11, color: miss ? C.miss : C.faint }}>✕</Text>
       </Pressable>
@@ -91,7 +98,7 @@ export default function Today() {
   const [day, setDay] = useState(today);
   const p = state.period;
   const started = today >= p.start;
-  const goals = activeGoals(state, day);
+  const goals = activeGoals(state, day).filter((g) => onItsDay(g, day)); // Monday/Thursday goals only on their days
   const habits = goals.filter((g) => !g.challengeId);
   const sets = state.sets && state.sets.length ? state.sets : [{ id: 'worship', name: null }];
   const setOf = (g) => (sets.some((x) => x.id === g.setId) ? g.setId : sets[0].id);

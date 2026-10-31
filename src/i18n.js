@@ -12,6 +12,9 @@ const en = {
   pickGoalsHint: 'Start with a few. The most beloved deeds are the constant ones, even if small.',
   tooMany: 'That is a lot to start with. Consider beginning with 3 to 5 and adding more later.',
   muslimPack: 'Worship',
+  monOrThu: 'Once a week · any day',
+  fastDoneOn: 'You already fasted this week ({day}) ✓',
+  weekdays: 'Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
   excuseAll: 'Travelling or ill today',
   excuseAllPast: 'Travelling or ill this day',
   excusedAllTitle: 'Travelling or ill',
@@ -175,6 +178,9 @@ const ar = {
   pickGoalsHint: 'ابدأ بالقليل. أحب الأعمال إلى الله أدومها وإن قل.',
   tooMany: 'هذا كثير للبداية. ابدأ بثلاثة إلى خمسة أهداف وأضف لاحقًا.',
   muslimPack: 'العبادات',
+  monOrThu: 'مرة في الأسبوع · أي يوم',
+  fastDoneOn: 'صمت هذا الأسبوع ({day}) ✓',
+  weekdays: 'الأحد,الاثنين,الثلاثاء,الأربعاء,الخميس,الجمعة,السبت',
   excuseAll: 'مسافر أو مريض اليوم',
   excuseAllPast: 'مسافر أو مريض في هذا اليوم',
   excusedAllTitle: 'مسافر أو مريض',
@@ -329,7 +335,7 @@ export function makeT(lang) {
     if (key === 'perWeek' && vars && (vars.n === 1 || vars.n === 2)) key = 'perWeek' + vars.n;
     if (key === 'streakDays' && vars) {
       const n = vars.n;
-      if (lang === 'ar') return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان متتاليان' : n >= 3 && n <= 10 ? n + ' أيام متتالية' : n + ' يومًا متتاليًا';
+      if (lang === 'ar') return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان متتاليان' : n <= 10 ? n + ' أيام متتالية' : n + ' يومًا متتاليًا';
       if (n === 1) return '1 day in a row';
     }
     if (key === 'nDays') {
@@ -357,6 +363,7 @@ export function goalDetail(goal, lang, catalogItem, t) {
   let target = goal.target, unit = goal.unit;
   const c = goal.catalogId ? catalogItem(goal.catalogId) : null;
   if (c && !unit) unit = lang === 'ar' ? c.unitAr : c.unitEn;
+  if (c && c.days && !goal.unit && !target) return t('monOrThu');
   if (target || unit) parts.push([target, unit].filter(Boolean).join(' ')); // a number, a detail, or both
   // "10 pages a week": the unit already names the week, unless the user changed how often
   if (c && c.weekInUnit && target && goal.freq === 'weekly' && (goal.perWeek || 1) === 1 && (!goal.unit || goal.unit === c.unitEn || goal.unit === c.unitAr)) return parts.join(' · ');

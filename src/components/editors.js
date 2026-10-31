@@ -4,6 +4,7 @@ import { C, F } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateStepper, Sheet, Radio, RadioList } from './ui';
 import { setName as setTitle } from '../lib/sets';
+import { goalDays } from '../lib/stats';
 import { addDays, dayBeforeRamadan, diffDays, fmtDate, hijriText, nextHijri, HIJRI_MONTHS } from '../lib/dates';
 import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
 import { goalTitle } from '../i18n';
@@ -133,7 +134,8 @@ export function GoalEditor({ goal, onSave, onDelete, onClose, setId: initialSet 
   const save = () => {
     const n = name.trim();
     if (!n) return;
-    const patch = { freq, perWeek: freq === 'weekly' ? perWeek : null, target: String(target).trim(), unit: unit.trim() || null };
+    const fixedDays = goal && goalDays(goal);
+    const patch = { freq: fixedDays ? 'weekly' : freq, perWeek: fixedDays ? 1 : freq === 'weekly' ? perWeek : null, target: String(target).trim(), unit: unit.trim() || null };
     if (!(goal && goal.challengeId)) patch.setId = setId;
     if (!goal || n !== startName) { patch.name = n; patch.catalogId = null; patch.title = null; }
     onSave(patch);
@@ -149,8 +151,14 @@ export function GoalEditor({ goal, onSave, onDelete, onClose, setId: initialSet 
         </View>
         <View style={{ gap: 8 }}>
           <Label style={{ marginBottom: 0 }}>{t('frequency')}</Label>
-          <Segmented value={freq} onChange={setFreq} options={[{ value: 'daily', label: t('daily') }, { value: 'weekly', label: t('timesPerWeek') }]} />
-          {freq === 'weekly' ? <Stepper value={perWeek} min={1} max={6} onChange={setPerWeek} suffix="× / 7" /> : null}
+          {goal && goalDays(goal) ? (
+            <T style={{ color: C.muted }}>{t('monOrThu')}</T>
+          ) : (
+            <>
+              <Segmented value={freq} onChange={setFreq} options={[{ value: 'daily', label: t('daily') }, { value: 'weekly', label: t('timesPerWeek') }]} />
+              {freq === 'weekly' ? <Stepper value={perWeek} min={1} max={6} onChange={setPerWeek} suffix="× / 7" /> : null}
+            </>
+          )}
         </View>
         <View style={{ gap: 6 }}>
           <Label style={{ marginBottom: 0 }}>{t('target')}</Label>
@@ -182,7 +190,7 @@ export function CatalogRows({ items, selected, onToggle }) {
   return items.map((c, i) => {
     const on = selected.includes(c.id);
     const unit = lang === 'ar' ? c.unitAr : c.unitEn;
-    const sub = [c.target ? c.target + (unit ? ' ' + unit : '') : null, c.weekInUnit ? null : c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
+    const sub = [c.target ? c.target + (unit ? ' ' + unit : '') : null, c.days ? t('monOrThu') : c.weekInUnit ? null : c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
     return (
       <View key={c.id}>
         {i > 0 ? <Divider /> : null}

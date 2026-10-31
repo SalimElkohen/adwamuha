@@ -4,7 +4,7 @@ import { C, tone } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H1, Card, Label, Ring } from '../components/ui';
 import { addDays, diffDays, hijriOf, HIJRI_MONTHS, monthShort, rangeKeys, todayKey, fromKey } from '../lib/dates';
-import { constancy, dayFraction, excusedFor, goalScore, goalStreak, isActiveOn, mark, goalStart } from '../lib/stats';
+import { constancy, dayFraction, excusedFor, onItsDay, goalScore, goalStreak, isActiveOn, mark, goalStart } from '../lib/stats';
 import { catalogItem } from '../data/catalog';
 import { goalTitle } from '../i18n';
 import { setName } from '../lib/sets';
@@ -79,7 +79,7 @@ function Grid({ goals }) {
           {rows.map((r) => (
             <View key={r.key} style={{ flexDirection: 'row', height: 22, marginBottom: GAP }}>
               {days.map((k) => {
-                const active = isActiveOn(r.goal, state, k);
+                const active = isActiveOn(r.goal, state, k) && onItsDay(r.goal, k);
                 const m = mark(state, r.goal.id, k);
                 const fut = k > today;
                 const exc = active && m !== 'd' && excusedFor(state, r.goal, k);

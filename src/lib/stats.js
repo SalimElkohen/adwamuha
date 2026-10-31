@@ -1,4 +1,17 @@
-import { addDays, diffDays, rangeKeys } from './dates';
+import { addDays, diffDays, fromKey, rangeKeys } from './dates';
+import { catalogItem } from '../data/catalog';
+
+// Goals done once a week on one of a few weekdays (e.g. fast Monday or Thursday)
+export function goalDays(goal) {
+  if (goal.freq !== 'weekly') return null;
+  if (goal.days && goal.days.length) return goal.days;
+  const c = goal.catalogId ? catalogItem(goal.catalogId) : null;
+  return c && c.days ? c.days : null;
+}
+export const weekday = (k) => fromKey(k).getDay();
+export function mondayOf(k) { return addDays(k, -((weekday(k) + 6) % 7)); }
+// shown on this day? (goals with set weekdays only appear on those days)
+export function onItsDay(goal, k) { const d = goalDays(goal); return !d || d.includes(weekday(k)); }
 
 // A goal is tracked from its own start (the day it was added, or its challenge start)
 // to its own end (challenge end, or the journey end, or open-ended).
@@ -31,6 +44,18 @@ export function mark(state, goalId, key) {
 // Weekly goals count in 7-day blocks from the goal's start.
 export function weekBlock(goal, state, key) {
   const a = goalStart(goal, state);
+  const wd = goalDays(goal);
+  if (wd) {
+    // calendar week Monday–Sunday; done once on any of its weekdays
+    let bs = mondayOf(key), be = addDays(bs, 6);
+    if (bs < a) bs = a;
+    const endG = goalEnd(goal, state);
+    if (endG && be > endG) be = endG;
+    const sched = rangeKeys(bs, be).filter((k) => wd.includes(weekday(k)));
+    const target = sched.some((k) => !excusedFor(state, goal, k)) ? 1 : 0;
+    const done = sched.some((k) => mark(state, goal.id, k) === 'd') ? 1 : 0;
+    return { start: bs, end: be, target, done, index: Math.floor(diffDays(mondayOf(a), bs) / 7), sched };
+  }
   const idx = Math.floor(diffDays(a, key) / 7);
   const bs = addDays(a, idx * 7);
   let be = addDays(bs, 6);

@@ -13,7 +13,8 @@ export const CATALOG = [
   { id: 'duha', pack: 'muslim', freq: 'daily', en: 'Duha prayer', ar: 'صلاة الضحى' },
   { id: 'shafa_witr', pack: 'muslim', freq: 'daily', en: 'Shafʿ & Witr', ar: 'الشفع والوتر' },
   { id: 'sadaqa', pack: 'muslim', freq: 'weekly', perWeek: 1, en: 'Sadaqa', ar: 'الصدقة' },
-  { id: 'fast_mon_thu', pack: 'muslim', freq: 'weekly', perWeek: 2, en: 'Fast Monday and/or Thursday', ar: 'صيام الاثنين و/أو الخميس' },
+  // days: weekdays it can be done on (0 = Sunday … 6 = Saturday); once done in a week, the rest of that week shows it as done
+  { id: 'fast_mon_thu', pack: 'muslim', freq: 'weekly', perWeek: 1, days: [0, 1, 2, 3, 4, 5, 6], en: 'Fast at least one day a week', ar: 'صيام يوم واحد على الأقل في الأسبوع' },
   { id: 'sport', pack: 'life', freq: 'weekly', perWeek: 3, en: 'Sport', ar: 'الرياضة' },
   // weekInUnit: the unit already says "a week", so the "1× a week" line is not shown
   { id: 'read_pages', pack: 'life', freq: 'weekly', perWeek: 1, weekInUnit: true, target: '10', unitEn: 'pages a week', unitAr: 'صفحات في الأسبوع', en: 'Read a book', ar: 'قراءة كتاب' },
@@ -37,6 +38,7 @@ export function goalFromCatalog(c, extra = {}) {
     name: null,
     freq: c.freq,
     perWeek: c.perWeek || null,
+    days: c.days || null,
     target: c.target || '',
     unit: null,
     archived: false,
