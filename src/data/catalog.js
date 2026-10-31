@@ -9,7 +9,7 @@ export const CATALOG = [
   { id: 'adhkar_evening', pack: 'muslim', freq: 'daily', en: 'Evening adhkar', ar: 'أذكار المساء' },
   { id: 'istighfar', pack: 'muslim', freq: 'daily', target: '100', unitEn: 'times', unitAr: 'مرة', en: 'Istighfar', ar: 'الاستغفار' },
   { id: 'salawat', pack: 'muslim', freq: 'daily', target: '100', unitEn: 'times', unitAr: 'مرة', en: 'Salawat on the Prophet ﷺ', ar: 'الصلاة على النبي ﷺ' },
-  { id: 'tahlil', pack: 'muslim', freq: 'daily', target: '100 + 100', unitEn: 'morning & evening', unitAr: 'صباحًا ومساءً', en: 'Lā ilāha illā-llāh waḥdahu lā sharīka lah…', ar: 'لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير' },
+  { id: 'tahlil', pack: 'muslim', freq: 'daily', target: '100', unitEn: 'times', unitAr: 'مرة', en: 'Lā ilāha illā-llāh waḥdahu lā sharīka lah…', ar: 'لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير' },
   { id: 'duha', pack: 'muslim', freq: 'daily', en: 'Duha prayer', ar: 'صلاة الضحى' },
   { id: 'shafa_witr', pack: 'muslim', freq: 'daily', en: 'Shafʿ & Witr', ar: 'الشفع والوتر' },
   { id: 'sadaqa', pack: 'muslim', freq: 'weekly', perWeek: 1, en: 'Sadaqa', ar: 'الصدقة' },
