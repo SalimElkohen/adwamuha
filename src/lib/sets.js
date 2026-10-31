@@ -29,6 +29,8 @@ export function migrateSets(s) {
   if (!s.onboarded) return s.sets ? s : { ...s, sets: [] };
   let changed = false;
   const goals = (s.goals || []).map((g) => {
+    // tahlil became "100 times a day" (Bukhari 3293, Muslim 2691)
+    if (g.catalogId === 'tahlil' && g.target === '100 + 100') { changed = true; g = { ...g, target: '100', unit: null }; }
     if (g.challengeId || SET_IDS.includes(g.setId)) return g;
     changed = true;
     return { ...g, setId: packSet(g.catalogId) };
