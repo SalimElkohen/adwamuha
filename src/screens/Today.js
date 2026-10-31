@@ -60,8 +60,6 @@ function GoalRow({ goal, day, readOnly, alsoIn }) {
   );
 }
 
-const STRONG_AR = '«المؤمنُ القويُّ خيرٌ وأحبُّ إلى اللهِ من المؤمنِ الضعيف»';
-const STRONG_EN = '“The strong believer is better and more beloved to Allah than the weak believer.”';
 const EXCUSE_AR = '«إذا مَرِضَ العَبدُ أو سافَرَ كُتِبَ له مِثلُ ما كان يَعمَلُ مُقيمًا صَحيحًا»';
 
 function Callout({ title, quote, refText, body, onClose, children }) {
@@ -137,10 +135,6 @@ export default function Today() {
       <View style={{ paddingTop: 4 }}>
         <Label style={{ marginBottom: 2 }}>{hijriText(today, lang, state.hijriAdjust)}</Label>
         <H1>{fmtDate(today, lang, { weekday: true })}</H1>
-        <Text style={{ fontFamily: lang === 'ar' ? F.serifRegular : 'Amiri-Italic', fontSize: lang === 'ar' ? 17 : 15, lineHeight: lang === 'ar' ? 30 : 22, color: C.gold, textAlign: rtl ? 'right' : 'left', marginTop: 4 }}>
-          {lang === 'ar' ? STRONG_AR : STRONG_EN}
-        </Text>
-        <T style={{ fontSize: 11, color: C.faint, letterSpacing: 0.4 }}>{t('setStrongRef')}</T>
       </View>
 
       <Card style={{ flexDirection: 'row', paddingVertical: 16, paddingHorizontal: 0 }}>
