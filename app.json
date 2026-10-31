@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Adwamuhā",
+    "name": "Adwamuha",
     "slug": "adwamuha",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,7 +11,8 @@
       "bundleIdentifier": "com.adwamuha.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "CFBundleAllowMixedLocalizations": true
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleDisplayName": "Adwamuhā"
       }
     },
     "locales": {
