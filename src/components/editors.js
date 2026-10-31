@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateStepper, Sheet, Radio, RadioList } from './ui';
-import { setName } from '../lib/sets';
+import { setName as setTitle } from '../lib/sets';
 import { addDays, dayBeforeRamadan, diffDays, fmtDate, hijriText, nextHijri, HIJRI_MONTHS } from '../lib/dates';
 import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
 import { goalTitle } from '../i18n';
@@ -162,7 +162,7 @@ export function GoalEditor({ goal, onSave, onDelete, onClose, setId: initialSet 
         {showSets ? (
           <View>
             <Label style={{ marginBottom: 0 }}>{t('inSet')}</Label>
-            <RadioList value={setId} onChange={setSetId} options={state.sets.map((x) => ({ value: x.id, label: setName(x, t) }))} />
+            <RadioList value={setId} onChange={setSetId} options={state.sets.map((x) => ({ value: x.id, label: setTitle(x, t) }))} />
           </View>
         ) : null}
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
