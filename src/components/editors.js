@@ -211,7 +211,7 @@ export function CatalogList({ selected, onToggle, exclude = [] }) {
   return (
     <View style={{ gap: 22 }}>
       {groups.map((g) => {
-        const items = CATALOG.filter((c) => c.pack === g.key && !exclude.includes(c.id));
+        const items = CATALOG.filter((c) => c.pack === g.key && !c.hidden && !exclude.includes(c.id));
         if (!items.length) return null;
         return (
           <View key={g.key}>

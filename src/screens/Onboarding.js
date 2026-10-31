@@ -13,7 +13,7 @@ export default function Onboarding() {
   const { state, actions, t } = useStore();
   const [step, setStep] = useState(0);
   // set 1 (worship) starts with three suggestions ticked; set 2 only exists once a goal is ticked in it
-  const [picked, setPicked] = useState({ worship: ['five_on_time', 'fajr_on_time', 'quran'], strong: [] });
+  const [picked, setPicked] = useState({ worship: ['mosque', 'fajr_on_time', 'quran'], strong: [] });
   const [custom, setCustom] = useState([]);
   const [names, setNames] = useState({ worship: null, strong: null }); // null = default name
   const [editing, setEditing] = useState(null); // set id the new goal goes into
@@ -79,7 +79,7 @@ export default function Onboarding() {
       const on = inSet(id) > 0;
       const value = names[id] != null ? names[id] : defaultName(id, t);
       const isDefault = !cleanName(names[id], id, t);
-      const items = CATALOG.filter((c) => c.pack === (id === 'worship' ? 'muslim' : 'life'));
+      const items = CATALOG.filter((c) => !c.hidden && c.pack === (id === 'worship' ? 'muslim' : 'life'));
       const mine = custom.filter((g) => g.setId === id);
       return (
         <View key={id}>

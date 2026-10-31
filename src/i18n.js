@@ -63,6 +63,8 @@ const en = {
   goalReached: 'Weekly goal reached',
   daily: 'Daily',
   perWeek: '{n}× a week',
+  perWeek1: '1× a week',
+  perWeek2: '2× a week',
   futureDay: 'This day has not come yet.',
   backToToday: 'Back to today',
   noGoals: 'No goals for this day.',
@@ -196,6 +198,8 @@ const ar = {
   goalReached: 'تحقق هدف الأسبوع',
   daily: 'يومي',
   perWeek: '{n} مرات في الأسبوع',
+  perWeek1: 'مرة في الأسبوع',
+  perWeek2: 'مرتان في الأسبوع',
   futureDay: 'هذا اليوم لم يأتِ بعد.',
   backToToday: 'العودة إلى اليوم',
   noGoals: 'لا أهداف لهذا اليوم.',
@@ -269,6 +273,8 @@ const DICT = { en, ar };
 export function makeT(lang) {
   const d = DICT[lang] || en;
   return (key, vars) => {
+    // Arabic needs its own forms for one and two (مرة / مرتان)
+    if (key === 'perWeek' && vars && (vars.n === 1 || vars.n === 2)) key = 'perWeek' + vars.n;
     let s = d[key] != null ? d[key] : en[key] != null ? en[key] : key;
     if (vars) Object.keys(vars).forEach((k) => { s = s.split('{' + k + '}').join(String(vars[k])); });
     return s;
