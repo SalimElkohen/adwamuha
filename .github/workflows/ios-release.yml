@@ -1,6 +1,11 @@
 # Builds the iPhone app on Expo's servers and uploads it to App Store Connect (TestFlight).
 # Run it from GitHub: Actions › "iOS release" › Run workflow (works from the iPhone browser).
-# Needs one repository secret: EXPO_TOKEN (from expo.dev › Account settings › Access tokens).
+# Repository secrets:
+#   EXPO_TOKEN     – expo.dev › Account settings › Access tokens
+#   ASC_KEY_ID     – App Store Connect API key: Key ID
+#   ASC_ISSUER_ID  – App Store Connect API key: Issuer ID
+#   APPLE_TEAM_ID  – developer.apple.com › Membership details › Team ID
+#   ASC_KEY_P8     – the full text of the AuthKey_….p8 file (BEGIN … END lines included)
 name: iOS release
 
 on:
@@ -20,5 +25,17 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
       - name: Install dependencies
         run: npm install
+      - name: Write the App Store Connect key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          printf '%s\n' "$ASC_KEY_P8" | tr -d '\r' > "$RUNNER_TEMP/asc.p8"
+          grep -q "BEGIN PRIVATE KEY" "$RUNNER_TEMP/asc.p8" || { echo "ASC_KEY_P8 secret is missing or incomplete"; exit 1; }
       - name: Build on EAS and submit to App Store Connect
+        env:
+          EXPO_ASC_API_KEY_PATH: ${{ runner.temp }}/asc.p8
+          EXPO_ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          EXPO_ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          EXPO_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          EXPO_APPLE_TEAM_TYPE: INDIVIDUAL
         run: eas build --platform ios --profile production --non-interactive --auto-submit
