@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
-import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateStepper, Sheet, Radio } from './ui';
+import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateStepper, Sheet, Radio, RadioList } from './ui';
+import { setName } from '../lib/sets';
 import { addDays, dayBeforeRamadan, diffDays, fmtDate, hijriText, nextHijri, HIJRI_MONTHS } from '../lib/dates';
 import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
 import { goalTitle } from '../i18n';
@@ -116,7 +117,7 @@ export function PeriodPicker({ value, onChange, hijriAdjust }) {
 }
 
 // ---- Goal editor (new or existing)
-export function GoalEditor({ goal, onSave, onDelete, onClose }) {
+export function GoalEditor({ goal, onSave, onDelete, onClose, setId: initialSet }) {
   const { state, t } = useStore();
   const lang = state.lang;
   const startName = goal ? goalTitle(goal, lang, catalogItem) : '';
@@ -126,11 +127,14 @@ export function GoalEditor({ goal, onSave, onDelete, onClose }) {
   const [perWeek, setPerWeek] = useState(goal && goal.perWeek ? goal.perWeek : 3);
   const [target, setTarget] = useState(goal ? goal.target || '' : '');
   const [unit, setUnit] = useState(goal ? goal.unit || (cat ? (lang === 'ar' ? cat.unitAr : cat.unitEn) || '' : '') : '');
+  const [setId, setSetId] = useState((goal && goal.setId) || initialSet || (state.sets[0] && state.sets[0].id) || 'worship');
+  const showSets = state.sets.length > 1 && !(goal && goal.challengeId);
 
   const save = () => {
     const n = name.trim();
     if (!n) return;
-    const patch = { freq, perWeek: freq === 'weekly' ? perWeek : null, target: target.trim(), unit: unit.trim() || null };
+    const patch = { freq, perWeek: freq === 'weekly' ? perWeek : null, target: String(target).trim(), unit: unit.trim() || null };
+    if (!(goal && goal.challengeId)) patch.setId = setId;
     if (!goal || n !== startName) { patch.name = n; patch.catalogId = null; patch.title = null; }
     onSave(patch);
   };
@@ -155,6 +159,12 @@ export function GoalEditor({ goal, onSave, onDelete, onClose }) {
             <Field value={unit} onChangeText={setUnit} placeholder={t('unitPh')} style={{ flex: 2 }} />
           </View>
         </View>
+        {showSets ? (
+          <View>
+            <Label style={{ marginBottom: 0 }}>{t('inSet')}</Label>
+            <RadioList value={setId} onChange={setSetId} options={state.sets.map((x) => ({ value: x.id, label: setName(x, t) }))} />
+          </View>
+        ) : null}
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
           <Button title={t('cancel')} kind="secondary" onPress={onClose} style={{ flex: 1 }} />
           <Button title={t('save')} onPress={save} disabled={!name.trim()} style={{ flex: 1 }} />
@@ -165,10 +175,35 @@ export function GoalEditor({ goal, onSave, onDelete, onClose }) {
   );
 }
 
-// ---- Catalog list with check marks (used in onboarding and settings)
-export function CatalogList({ selected, onToggle, exclude = [] }) {
+// ---- Catalog rows with check marks (inside a Card)
+export function CatalogRows({ items, selected, onToggle }) {
   const { state, t } = useStore();
   const lang = state.lang;
+  return items.map((c, i) => {
+    const on = selected.includes(c.id);
+    const unit = lang === 'ar' ? c.unitAr : c.unitEn;
+    const sub = [c.target ? c.target + (unit ? ' ' + unit : '') : null, c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
+    return (
+      <View key={c.id}>
+        {i > 0 ? <Divider /> : null}
+        <Pressable onPress={() => onToggle(c.id)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 13 }}>
+          <View style={{ flex: 1 }}>
+            <T style={{ fontWeight: '600', color: on ? C.ink : C.muted }}>{lang === 'ar' ? c.ar : c.en}</T>
+            <T style={{ fontSize: 13, color: C.faint, marginTop: 1 }}>{sub}</T>
+          </View>
+          <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: on ? C.accent : C.line, backgroundColor: on ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+            {on ? <Text style={{ color: C.onAccent, fontWeight: '800', fontSize: 13 }}>✓</Text> : null}
+          </View>
+        </Pressable>
+      </View>
+    );
+  });
+}
+
+// ---- Catalog list grouped by pack (used when adding goals from Settings)
+export function CatalogList({ selected, onToggle, exclude = [] }) {
+  const { t } = useStore();
   const groups = [
     { key: 'muslim', title: t('muslimPack') },
     { key: 'life', title: t('lifePack') },
@@ -182,26 +217,7 @@ export function CatalogList({ selected, onToggle, exclude = [] }) {
           <View key={g.key}>
             <Label>{g.title}</Label>
             <Card style={{ paddingVertical: 4, paddingHorizontal: 16 }}>
-              {items.map((c, i) => {
-                const on = selected.includes(c.id);
-                const unit = lang === 'ar' ? c.unitAr : c.unitEn;
-                const sub = [c.target ? c.target + (unit ? ' ' + unit : '') : null, c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
-                return (
-                  <View key={c.id}>
-                    {i > 0 ? <Divider /> : null}
-                    <Pressable onPress={() => onToggle(c.id)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 13 }}>
-                      <View style={{ flex: 1 }}>
-                        <T style={{ fontWeight: '600', color: on ? C.ink : C.muted }}>{lang === 'ar' ? c.ar : c.en}</T>
-                        <T style={{ fontSize: 13, color: C.faint, marginTop: 1 }}>{sub}</T>
-                      </View>
-                      <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: on ? C.accent : C.line, backgroundColor: on ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                        {on ? <Text style={{ color: C.onAccent, fontWeight: '800', fontSize: 13 }}>✓</Text> : null}
-                      </View>
-                    </Pressable>
-                  </View>
-                );
-              })}
+              <CatalogRows items={items} selected={selected} onToggle={onToggle} />
             </Card>
           </View>
         );

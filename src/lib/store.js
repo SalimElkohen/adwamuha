@@ -4,6 +4,7 @@ import { addDays, todayKey } from './dates';
 import { catalogItem, goalFromCatalog } from '../data/catalog';
 import { goalScore } from './stats';
 import { makeT } from '../i18n';
+import { MAX_SETS, SET_IDS, migrateSets } from './sets';
 
 const KEY = 'adwamuha:v1';
 
@@ -14,6 +15,7 @@ export function initialState() {
     onboarded: false,
     hijriAdjust: 0,
     period: { start: todayKey(), end: null },
+    sets: [], // [{ id: 'worship' | 'strong', name: string | null }] – at most two
     goals: [],
     marks: {},
     reminders: { morning: true, evening: true, morningTime: '05:00', eveningTime: '18:00' },
@@ -35,7 +37,7 @@ export function StoreProvider({ children }) {
         if (!alive) return;
         let s = initialState();
         if (raw) {
-          try { s = { ...s, ...JSON.parse(raw) }; } catch (e) {}
+          try { s = migrateSets({ ...s, ...JSON.parse(raw) }); } catch (e) {}
         }
         setState(s);
       })
@@ -58,8 +60,29 @@ export function StoreProvider({ children }) {
     setHijriAdjust: (hijriAdjust) => update((s) => ({ ...s, hijriAdjust })),
     setPeriod: (period) => update((s) => ({ ...s, period })),
     setReminders: (r) => update((s) => ({ ...s, reminders: { ...s.reminders, ...r } })),
-    finishOnboarding: ({ lang, goals, period, hijriAdjust, reminders }) =>
-      update((s) => ({ ...s, lang, goals, period, hijriAdjust, reminders: { ...s.reminders, ...reminders }, onboarded: true })),
+    finishOnboarding: ({ lang, sets, goals, period, hijriAdjust, reminders }) =>
+      update((s) => ({ ...s, lang, sets, goals, period, hijriAdjust, reminders: { ...s.reminders, ...reminders }, onboarded: true })),
+    renameSet: (id, name) => update((s) => ({ ...s, sets: s.sets.map((x) => (x.id === id ? { ...x, name } : x)) })),
+    addSet: () =>
+      update((s) => {
+        if (s.sets.length >= MAX_SETS) return s;
+        const id = SET_IDS.find((x) => !s.sets.some((y) => y.id === x));
+        return { ...s, sets: [...s.sets, { id, name: null }] };
+      }),
+    deleteSet: (id) =>
+      update((s) => {
+        if (s.sets.length <= 1) return s;
+        const gone = s.goals.filter((g) => !g.challengeId && g.setId === id).map((g) => g.id);
+        const marks = { ...s.marks };
+        gone.forEach((g) => delete marks[g]);
+        return {
+          ...s,
+          sets: s.sets.filter((x) => x.id !== id),
+          goals: s.goals.filter((g) => !gone.includes(g.id)),
+          marks,
+          challenges: s.challenges.map((c) => ({ ...c, linkedIds: (c.linkedIds || []).filter((x) => !gone.includes(x)) })),
+        };
+      }),
     toggleMark: (goalId, key, val) =>
       update((s) => {
         const m = { ...(s.marks[goalId] || {}) };

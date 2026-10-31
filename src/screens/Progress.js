@@ -7,6 +7,8 @@ import { addDays, diffDays, hijriOf, HIJRI_MONTHS, monthShort, rangeKeys, todayK
 import { constancy, dayFraction, goalScore, goalStreak, isActiveOn, mark, goalStart } from '../lib/stats';
 import { catalogItem } from '../data/catalog';
 import { goalTitle } from '../i18n';
+import { setName } from '../lib/sets';
+import { F } from '../theme';
 
 const CELL = 12, GAP = 2, NAME_W = 118;
 
@@ -15,7 +17,9 @@ function Grid() {
   const lang = state.lang;
   const today = todayKey();
   const p = state.period;
-  const goals = state.goals.filter((g) => !g.archived);
+  const order = (state.sets || []).map((x) => x.id);
+  const rank = (g) => (g.challengeId ? 9 : Math.max(0, order.indexOf(g.setId)));
+  const goals = state.goals.filter((g) => !g.archived).slice().sort((a, b) => rank(a) - rank(b));
   let first = p.start;
   goals.forEach((g) => { const s = goalStart(g, state); if (s < first) first = s; });
   let last = p.end || addDays(today, 6);
@@ -105,6 +109,12 @@ export default function Progress() {
   const p = state.period;
   const score = constancy(state, today);
   const goals = state.goals.filter((g) => !g.archived);
+  const sets = state.sets && state.sets.length ? state.sets : [{ id: 'worship', name: null }];
+  const setOf = (g) => (sets.some((x) => x.id === g.setId) ? g.setId : sets[0].id);
+  const groups = [
+    ...sets.map((st) => ({ key: st.id, title: setName(st, t), goals: goals.filter((g) => !g.challengeId && setOf(g) === st.id) })),
+    ...state.challenges.map((c) => ({ key: c.id, title: t('challengeTag') + ' · ' + (c.title[lang] || c.title.en), goals: goals.filter((g) => g.challengeId === c.id) })),
+  ].filter((gr) => gr.goals.length);
   const total = p.end ? diffDays(p.start, p.end) + 1 : null;
   const elapsed = Math.max(0, Math.min(total || 1e9, diffDays(p.start, today) + 1));
   const left = total ? Math.max(0, total - elapsed) : null;
@@ -127,22 +137,30 @@ export default function Progress() {
         </View>
       </Card>
 
-      <Card>
-        <Label>{t('goals')}</Label>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 16 }}>
-          {goals.map((g) => {
-            const s = goalScore(g, state, today);
-            const k = g.freq === 'weekly' ? 0 : goalStreak(g, state, today);
-            return (
-              <View key={g.id} style={{ width: '33.33%', alignItems: 'center', gap: 4, paddingHorizontal: 4 }}>
-                <Ring size={72} stroke={5} pct={s.pct || 0} color={tone(s.pct)} center={s.pct == null ? '—' : Math.round(s.pct) + '%'} />
-                <Text numberOfLines={2} style={{ fontSize: 12, fontWeight: '600', color: C.ink, textAlign: 'center' }}>{goalTitle(g, lang, catalogItem)}</Text>
-                <Text style={{ fontSize: 11, color: k > 0 ? C.gold : C.faint }}>{k > 0 ? '✦ ' + k : s.done + '/' + s.expected}</Text>
-              </View>
-            );
-          })}
-        </View>
-      </Card>
+      {groups.map((gr) => {
+        const sc = constancy(state, today, gr.goals);
+        return (
+          <Card key={gr.key}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+              <Label style={{ flex: 1, marginBottom: 0 }}>{gr.title}</Label>
+              <Text style={{ fontFamily: F.serif, fontSize: 18, color: sc.pct == null ? C.faint : tone(sc.pct) }}>{sc.pct == null ? '—' : Math.round(sc.pct) + '%'}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 16 }}>
+              {gr.goals.map((g) => {
+                const s = goalScore(g, state, today);
+                const k = g.freq === 'weekly' ? 0 : goalStreak(g, state, today);
+                return (
+                  <View key={g.id} style={{ width: '33.33%', alignItems: 'center', gap: 4, paddingHorizontal: 4 }}>
+                    <Ring size={72} stroke={5} pct={s.pct || 0} color={tone(s.pct)} center={s.pct == null ? '—' : Math.round(s.pct) + '%'} />
+                    <Text numberOfLines={2} style={{ fontSize: 12, fontWeight: '600', color: C.ink, textAlign: 'center' }}>{goalTitle(g, lang, catalogItem)}</Text>
+                    <Text style={{ fontSize: 11, color: k > 0 ? C.gold : C.faint }}>{k > 0 ? '✦ ' + k : s.done + '/' + s.expected}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </Card>
+        );
+      })}
 
       <Card>
         <Label>{t('allDays')}</Label>

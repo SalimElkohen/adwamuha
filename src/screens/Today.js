@@ -8,8 +8,9 @@ import { activeGoals, constancy, goalScore, goalStreak, mark, streak, weekBlock 
 import { catalogItem } from '../data/catalog';
 import { goalTitle, goalDetail } from '../i18n';
 import { hadithForDay } from '../data/hadith';
+import { setName } from '../lib/sets';
 
-function GoalRow({ goal, day, readOnly }) {
+function GoalRow({ goal, day, readOnly, alsoIn }) {
   const { state, actions, t } = useStore();
   const lang = state.lang;
   const today = todayKey();
@@ -36,7 +37,7 @@ function GoalRow({ goal, day, readOnly }) {
         </View>
         <View style={{ flex: 1 }}>
           <T style={{ fontWeight: '600', color: miss ? C.muted : C.ink, textDecorationLine: miss ? 'line-through' : 'none' }}>{goalTitle(goal, lang, catalogItem)}</T>
-          <T style={{ fontSize: 13, lineHeight: 18, color: met ? C.gold : C.faint }}>{sub}</T>
+          <T style={{ fontSize: 13, lineHeight: 18, color: met ? C.gold : C.faint }}>{sub}{alsoIn ? <Text style={{ color: C.gold }}>{'  ◆ ' + alsoIn}</Text> : null}</T>
         </View>
       </Pressable>
       <Pressable disabled={readOnly} onPress={() => actions.toggleMark(goal.id, day, 'x')} accessibilityRole="button" accessibilityLabel="Not done" hitSlop={8}
@@ -47,11 +48,11 @@ function GoalRow({ goal, day, readOnly }) {
   );
 }
 
-function Rows({ list, day, future }) {
+function Rows({ list, day, future, linked = {} }) {
   return list.map((g, i) => (
     <View key={g.id}>
       {i > 0 ? <Divider /> : null}
-      <GoalRow goal={g} day={day} readOnly={future} />
+      <GoalRow goal={g} day={day} readOnly={future} alsoIn={linked[g.id]} />
     </View>
   ));
 }
@@ -65,6 +66,11 @@ export default function Today() {
   const started = today >= p.start;
   const goals = activeGoals(state, day);
   const habits = goals.filter((g) => !g.challengeId);
+  const sets = state.sets && state.sets.length ? state.sets : [{ id: 'worship', name: null }];
+  const setOf = (g) => (sets.some((x) => x.id === g.setId) ? g.setId : sets[0].id);
+  const linked = {};
+  state.challenges.forEach((c) => (c.linkedIds || []).forEach((id) => { linked[id] = c.title[lang] || c.title.en; }));
+  const groups = sets.map((st) => ({ st, list: habits.filter((g) => setOf(g) === st.id) })).filter((x) => x.list.length);
   const score = constancy(state, today);
   const st = streak(state, today);
   const n = diffDays(p.start, day) + 1;
@@ -139,14 +145,26 @@ export default function Today() {
         <Divider />
         {future ? <T style={{ color: C.muted, paddingTop: 12 }}>{t('futureDay')}</T> : null}
         {!goals.length ? <T style={{ color: C.muted, paddingTop: 12 }}>{t('noGoals')}</T> : null}
-        <Rows list={habits} day={day} future={future} />
+        {groups.map(({ st, list }, i) => {
+          const sc = constancy(state, today, state.goals.filter((g) => !g.archived && !g.challengeId && setOf(g) === st.id));
+          return (
+            <View key={st.id} style={{ marginTop: i ? 6 : 0 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 14, paddingBottom: 2, borderTopWidth: i ? 1 : 0, borderColor: C.line }}>
+                <Label style={{ flex: 1, marginBottom: 0 }}>{setName(st, t)}</Label>
+                <Text style={{ fontFamily: F.serif, fontSize: 17, color: sc.pct == null ? C.faint : tone(sc.pct) }}>{sc.pct == null ? '—' : Math.round(sc.pct) + '%'}</Text>
+              </View>
+              <Rows list={list} day={day} future={future} linked={linked} />
+            </View>
+          );
+        })}
         {active.map((c) => {
           const cg = goals.filter((g) => g.challengeId === c.id);
           if (!cg.length) return null;
           return (
             <View key={c.id} style={{ marginTop: 6 }}>
-              <View style={{ borderTopWidth: 1, borderColor: C.line, paddingTop: 12 }}>
-                <Label>{t('challengeTag')} · {(c.title[lang] || c.title.en)} · {t('dayOf', { n: diffDays(c.start, day) + 1, total: diffDays(c.start, c.end) + 1 })}</Label>
+              <View style={{ borderTopWidth: 1, borderColor: C.line, paddingTop: 14, paddingBottom: 2 }}>
+                <Label style={{ marginBottom: 0 }}>{t('challengeTag')} · {(c.title[lang] || c.title.en)}</Label>
+                <T style={{ fontSize: 12, color: C.faint }}>{t('dayOf', { n: diffDays(c.start, day) + 1, total: diffDays(c.start, c.end) + 1 })}</T>
               </View>
               <Rows list={cg} day={day} future={future} />
             </View>
