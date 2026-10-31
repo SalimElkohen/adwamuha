@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H1, Label, Button, Card, Divider, Segmented, RadioList, Toggle } from '../components/ui';
 import { CatalogRows, GoalEditor, PeriodPicker } from '../components/editors';
-import { SET_IDS, cleanName, defaultName } from '../lib/sets';
+import { SET_IDS, defaultName } from '../lib/sets';
 import Logo from '../components/Logo';
 import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
 import { todayKey } from '../lib/dates';
@@ -15,7 +15,6 @@ export default function Onboarding() {
   // set 1 (worship) starts with three suggestions ticked; set 2 only exists once a goal is ticked in it
   const [picked, setPicked] = useState({ worship: ['mosque', 'fajr_on_time', 'quran'], strong: [] });
   const [custom, setCustom] = useState([]);
-  const [names, setNames] = useState({ worship: null, strong: null }); // null = default name
   const [editing, setEditing] = useState(null); // set id the new goal goes into
   const [period, setPeriod] = useState({ start: todayKey(), end: null });
   const [adj, setAdj] = useState(0);
@@ -27,7 +26,7 @@ export default function Onboarding() {
 
   const finish = () => {
     const active = SET_IDS.filter((id) => inSet(id) > 0);
-    const sets = active.map((id) => ({ id, name: cleanName(names[id], id, t) }));
+    const sets = active.map((id) => ({ id, name: null })); // set names are fixed
     const goals = [
       ...active.flatMap((id) => picked[id].map((c) => goalFromCatalog(catalogItem(c), { start: period.start, setId: id }))),
       ...custom.map((g) => ({ ...g, start: period.start })),
@@ -77,21 +76,14 @@ export default function Onboarding() {
     const toggle = (setId, c) => setPicked((p) => ({ ...p, [setId]: p[setId].includes(c) ? p[setId].filter((x) => x !== c) : [...p[setId], c] }));
     const setCard = (id, i) => {
       const on = inSet(id) > 0;
-      const value = names[id] != null ? names[id] : defaultName(id, t);
-      const isDefault = !cleanName(names[id], id, t);
       const items = CATALOG.filter((c) => !c.hidden && c.pack === (id === 'worship' ? 'muslim' : 'life'));
       const mine = custom.filter((g) => g.setId === id);
       return (
         <View key={id}>
           <Card style={{ paddingVertical: 4, paddingHorizontal: 16, borderColor: on ? C.accent : C.line }}>
             <View style={{ paddingTop: 12, paddingBottom: 12, gap: 6 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderColor: C.line }}>
-                <TextInput value={value} onChangeText={(v) => setNames((n) => ({ ...n, [id]: v }))} placeholder={t('setName')} placeholderTextColor={C.faint}
-                  accessibilityLabel={t('setName')} maxLength={32}
-                  style={{ flex: 1, fontFamily: F.serif, fontSize: 22, color: on ? C.ink : C.muted, paddingVertical: 6, backgroundColor: 'transparent', borderWidth: 0, textAlign: rtl ? 'right' : 'left' }} />
-                <Text style={{ color: C.gold, fontSize: 15 }}>✎</Text>
-              </View>
-              {id === 'strong' && isDefault ? (
+              <T style={{ fontFamily: F.serif, fontSize: 22, lineHeight: 32, color: on ? C.ink : C.muted }}>{defaultName(id, t)}</T>
+              {id === 'strong' ? (
                 <View style={{ gap: 2, paddingTop: 2 }}>
                   <Text style={{ fontFamily: F.serifRegular, fontSize: 15, lineHeight: 26, color: C.gold, textAlign: 'right', writingDirection: 'rtl', direction: 'rtl' }}>{rtl ? t('setStrongHadith') : '«المؤمنُ القويُّ خيرٌ وأحبُّ إلى اللهِ من المؤمنِ الضعيفِ، وفي كلٍّ خيرٌ»'}</Text>
                   {!rtl ? <T style={{ fontSize: 12, lineHeight: 17, color: C.muted, fontStyle: 'italic' }}>{t('setStrongHadith')}</T> : null}

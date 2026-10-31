@@ -6,8 +6,8 @@ import { catalogItem } from '../data/catalog';
 export const SET_IDS = ['worship', 'strong'];
 export const MAX_SETS = 2;
 
+// set names are fixed (not editable); they follow the app language
 export function setName(set, t) {
-  if (set && set.name && set.name.trim()) return set.name.trim();
   return t(set && set.id === 'strong' ? 'setStrong' : 'setWorship');
 }
 export function defaultName(id, t) {

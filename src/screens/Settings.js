@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H1, H2, Card, Divider, Label, Button, Segmented, RadioList, Toggle, Confirm, Sheet } from '../components/ui';
@@ -7,7 +7,7 @@ import { GoalEditor, CatalogSheet, PeriodPicker } from '../components/editors';
 import { diffDays, fmtDate, hijriText } from '../lib/dates';
 import { catalogItem } from '../data/catalog';
 import { goalTitle, goalDetail } from '../i18n';
-import { MAX_SETS, cleanName, setName } from '../lib/sets';
+import { MAX_SETS, setName } from '../lib/sets';
 
 export default function Settings() {
   const { state, actions, t, rtl } = useStore();
@@ -39,13 +39,8 @@ export default function Settings() {
           const list = goals.filter((g) => setOf(g) === st.id);
           return (
             <Card key={st.id} style={{ gap: 4 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderColor: C.line, marginBottom: 4 }}>
-                <TextInput value={st.name != null ? st.name : setName(st, t)} accessibilityLabel={t('setName')} maxLength={32}
-                  onChangeText={(v) => actions.renameSet(st.id, v)} onEndEditing={(e) => actions.renameSet(st.id, cleanName(e.nativeEvent.text, st.id, t))} onBlur={() => actions.renameSet(st.id, cleanName(st.name, st.id, t))}
-                  style={{ flex: 1, fontFamily: F.serif, fontSize: 21, color: C.ink, paddingVertical: 6, backgroundColor: 'transparent', borderWidth: 0, textAlign: rtl ? 'right' : 'left' }} />
-                <Text style={{ color: C.gold, fontSize: 15 }}>✎</Text>
-              </View>
-              {st.id === 'strong' && !st.name ? <T style={{ fontSize: 11, color: C.faint, letterSpacing: 0.4 }}>{t('setStrongRef')}</T> : null}
+              <T style={{ fontFamily: F.serif, fontSize: 21, lineHeight: 30, color: C.ink }}>{setName(st, t)}</T>
+              {st.id === 'strong' ? <T style={{ fontSize: 11, color: C.faint, letterSpacing: 0.4 }}>{t('setStrongRef')}</T> : null}
               {list.map((g, k) => (
                 <Pressable key={g.id} onPress={() => setEdit(g)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderTopWidth: k ? 1 : 0, borderColor: C.divider, gap: 10 }}>
                   <View style={{ flex: 1 }}>
