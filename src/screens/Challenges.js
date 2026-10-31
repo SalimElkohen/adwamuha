@@ -17,6 +17,8 @@ export default function Challenges() {
   useEffect(() => { loadRemoteChallenges().then(setRemote); }, []);
   const all = [...BUILT_IN_CHALLENGES, ...remote.filter((r) => !BUILT_IN_CHALLENGES.some((b) => b.id === r.id))];
   const joinedIds = state.challenges.map((c) => c.id);
+  // teasers, in calendar order
+  const upcoming = all.filter((ch) => ch.upcoming).sort((a, b) => (challengeDates(a, today, state.hijriAdjust).start < challengeDates(b, today, state.hijriAdjust).start ? -1 : 1));
 
   const goalNames = (ch) => ch.goals.map((g) => {
     if (typeof g === 'string') { const c = catalogItem(g); return c ? (lang === 'ar' ? c.ar : c.en) : g; }
@@ -56,7 +58,7 @@ export default function Challenges() {
       })}
 
       <Label style={{ marginTop: 6, marginBottom: 0 }}>{t('available')}</Label>
-      {all.filter((ch) => !joinedIds.includes(ch.id)).map((ch) => {
+      {all.filter((ch) => !ch.upcoming && !joinedIds.includes(ch.id)).map((ch) => {
         const dates = challengeDates(ch, today, state.hijriAdjust);
         const len = diffDays(dates.start, dates.end) + 1;
         const tx = ch[lang] || ch.en;
@@ -71,6 +73,24 @@ export default function Challenges() {
               <T style={{ fontSize: 12, color: C.gold }}>{hijriText(dates.start, lang, state.hijriAdjust)} → {hijriText(dates.end, lang, state.hijriAdjust)}</T>
             </View>
             <Button title={t('join')} onPress={() => actions.joinChallenge(ch, dates.start, dates.end)} />
+          </Card>
+        );
+      })}
+
+      {upcoming.length ? <Label style={{ marginTop: 6, marginBottom: 0 }}>{t('comingSoon')}</Label> : null}
+      {upcoming.map((ch) => {
+        const dates = challengeDates(ch, today, state.hijriAdjust);
+        const tx = ch[lang] || ch.en;
+        return (
+          <Card key={ch.id} style={{ gap: 8, borderColor: C.divider, backgroundColor: 'rgba(23,90,65,0.55)' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <H2 style={{ flex: 1, color: C.muted }}>{tx.title}</H2>
+              <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+                <Text style={{ color: C.gold, fontSize: 11, letterSpacing: 0.8 }}>{t('comingSoonPill')}</Text>
+              </View>
+            </View>
+            <T style={{ color: C.faint, fontSize: 14, lineHeight: 21 }}>{tx.desc}</T>
+            <T style={{ fontSize: 12, color: C.gold }}>{hijriText(dates.start, lang, state.hijriAdjust)} · {fmtDate(dates.start, lang, { year: true })}</T>
           </Card>
         );
       })}
