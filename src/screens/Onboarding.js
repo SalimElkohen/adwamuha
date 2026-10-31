@@ -83,7 +83,6 @@ export default function Onboarding() {
       const mine = custom.filter((g) => g.setId === id);
       return (
         <View key={id}>
-          <Label>{t('setLabel', { n: i + 1 })}</Label>
           <Card style={{ paddingVertical: 4, paddingHorizontal: 16, borderColor: on ? C.accent : C.line }}>
             <View style={{ paddingTop: 12, paddingBottom: 12, gap: 6 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderColor: C.line }}>

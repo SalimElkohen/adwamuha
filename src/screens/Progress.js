@@ -12,18 +12,18 @@ import { F } from '../theme';
 
 const CELL = 12, GAP = 2, NAME_W = 118;
 
-function Grid() {
+// one table for a group of goals (a set or a challenge)
+function Grid({ goals }) {
   const { state, actions, t, rtl } = useStore();
   const lang = state.lang;
   const today = todayKey();
   const p = state.period;
-  const order = (state.sets || []).map((x) => x.id);
-  const rank = (g) => (g.challengeId ? 9 : Math.max(0, order.indexOf(g.setId)));
-  const goals = state.goals.filter((g) => !g.archived).slice().sort((a, b) => rank(a) - rank(b));
-  let first = p.start;
-  goals.forEach((g) => { const s = goalStart(g, state); if (s < first) first = s; });
-  let last = p.end || addDays(today, 6);
-  goals.forEach((g) => { if (g.end && g.end > last) last = g.end; });
+  let first = null;
+  goals.forEach((g) => { const s = goalStart(g, state); if (!first || s < first) first = s; });
+  first = first || p.start;
+  let last = goals.some((g) => !g.challengeId) ? p.end || addDays(today, 6) : null;
+  goals.forEach((g) => { if (g.end && (!last || g.end > last)) last = g.end; });
+  if (!last) last = addDays(today, 6);
   const days = rangeKeys(first, last);
   const scroller = useRef(null);
   const ti = days.indexOf(today);
@@ -38,9 +38,11 @@ function Grid() {
   // month labels (Gregorian + Hijri)
   const gLabels = [], hLabels = [];
   days.forEach((k, i) => {
-    if (i === 0 || fromKey(k).getDate() === 1) gLabels.push({ i, text: monthShort(k, lang) });
+    // a new month label replaces one that started fewer than 5 cells earlier, so they never overlap
+    const put = (arr, text) => { if (arr.length && i - arr[arr.length - 1].i < 5) arr.pop(); arr.push({ i, text }); };
+    if (i === 0 || fromKey(k).getDate() === 1) put(gLabels, monthShort(k, lang));
     const h = hijriOf(k, state.hijriAdjust);
-    if (i === 0 || h.d === 1) hLabels.push({ i, text: HIJRI_MONTHS[lang === 'ar' ? 'ar' : 'en'][h.m - 1] });
+    if (i === 0 || h.d === 1) put(hLabels, HIJRI_MONTHS[lang === 'ar' ? 'ar' : 'en'][h.m - 1]);
   });
   const W = days.length * (CELL + GAP);
 
@@ -89,7 +91,8 @@ function Grid() {
           ))}
           <View style={{ flexDirection: 'row', height: 22, marginTop: 6 }}>
             {days.map((k) => {
-              const f = dayFraction(state, k);
+              const daily = goals.filter((g) => g.freq !== 'weekly' && isActiveOn(g, state, k));
+              const f = daily.length ? daily.filter((g) => mark(state, g.id, k) === 'd').length / daily.length : null;
               const fut = k > today;
               return <View key={k} style={{ width: CELL, height: 22, marginRight: GAP, borderRadius: 3, backgroundColor: f == null || fut ? 'transparent' : C.empty, overflow: 'hidden', justifyContent: 'flex-end' }}>
                 {f && !fut ? <View style={{ height: 22 * f, backgroundColor: C.accent, opacity: 0.85 }} /> : null}
@@ -112,8 +115,8 @@ export default function Progress() {
   const sets = state.sets && state.sets.length ? state.sets : [{ id: 'worship', name: null }];
   const setOf = (g) => (sets.some((x) => x.id === g.setId) ? g.setId : sets[0].id);
   const groups = [
-    ...sets.map((st) => ({ key: st.id, title: setName(st, t), goals: goals.filter((g) => !g.challengeId && setOf(g) === st.id) })),
-    ...state.challenges.map((c) => ({ key: c.id, title: t('challengeTag') + ' · ' + (c.title[lang] || c.title.en), goals: goals.filter((g) => g.challengeId === c.id) })),
+    ...sets.map((st) => ({ key: st.id, title: setName(st, t), name: setName(st, t), goals: goals.filter((g) => !g.challengeId && setOf(g) === st.id) })),
+    ...state.challenges.map((c) => ({ key: c.id, title: t('challengeTag') + ' · ' + (c.title[lang] || c.title.en), name: c.title[lang] || c.title.en, goals: goals.filter((g) => g.challengeId === c.id) })),
   ].filter((gr) => gr.goals.length);
   const total = p.end ? diffDays(p.start, p.end) + 1 : null;
   const elapsed = Math.max(0, Math.min(total || 1e9, diffDays(p.start, today) + 1));
@@ -162,10 +165,15 @@ export default function Progress() {
         );
       })}
 
-      <Card>
-        <Label>{t('allDays')}</Label>
-        <Grid />
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 12 }}>
+      <Label style={{ marginTop: 8, marginBottom: -4 }}>{t('allDays')}</Label>
+      {groups.map((gr) => (
+        <Card key={'grid_' + gr.key}>
+          <T style={{ fontFamily: F.serif, fontSize: 18, lineHeight: 28, marginBottom: 6 }}>{gr.name}</T>
+          <Grid goals={gr.goals} />
+        </Card>
+      ))}
+      <View style={{ paddingHorizontal: 4, gap: 6 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
           {[[C.accent, t('legendDone')], [C.miss, t('legendMissed')], [C.empty, t('legendOpen')]].map(([c, l]) => (
             <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: c }} />
@@ -174,8 +182,8 @@ export default function Progress() {
           ))}
           <Text style={{ fontSize: 12, color: C.muted }}><Text style={{ color: C.gold }}>▼</Text> {t('legendToday')}</Text>
         </View>
-        <T style={{ fontSize: 12, color: C.faint, marginTop: 6 }}>{t('gridHint')}</T>
-      </Card>
+        <T style={{ fontSize: 12, color: C.faint }}>{t('gridHint')}</T>
+      </View>
     </ScrollView>
   );
 }

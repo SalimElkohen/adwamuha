@@ -39,7 +39,6 @@ export default function Settings() {
           const list = goals.filter((g) => setOf(g) === st.id);
           return (
             <Card key={st.id} style={{ gap: 4 }}>
-              <Label style={{ marginBottom: 0 }}>{t('setLabel', { n: i + 1 })}</Label>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderColor: C.line, marginBottom: 4 }}>
                 <TextInput value={st.name != null ? st.name : setName(st, t)} accessibilityLabel={t('setName')} maxLength={32}
                   onChangeText={(v) => actions.renameSet(st.id, v)} onEndEditing={(e) => actions.renameSet(st.id, cleanName(e.nativeEvent.text, st.id, t))} onBlur={() => actions.renameSet(st.id, cleanName(st.name, st.id, t))}
