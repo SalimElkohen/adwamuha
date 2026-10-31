@@ -23,13 +23,23 @@ export function packSet(catalogId) {
   const c = catalogId ? catalogItem(catalogId) : null;
   return c && c.pack === 'life' ? 'strong' : 'worship';
 }
-// existing users (no sets yet): put each goal in the set of its pack
+// Data from before sets existed (or saved with an empty set list): give every everyday goal
+// a set from its suggestion pack, and make sure each set in use exists. Safe to run on every launch.
 export function migrateSets(s) {
-  if (s.sets) return s;
-  const goals = (s.goals || []).map((g) => (g.challengeId || g.setId ? g : { ...g, setId: packSet(g.catalogId) }));
+  if (!s.onboarded) return s.sets ? s : { ...s, sets: [] };
+  let changed = false;
+  const goals = (s.goals || []).map((g) => {
+    if (g.challengeId || SET_IDS.includes(g.setId)) return g;
+    changed = true;
+    return { ...g, setId: packSet(g.catalogId) };
+  });
+  const have = (s.sets || []).filter((x) => SET_IDS.includes(x.id));
   const used = SET_IDS.filter((id) => goals.some((g) => !g.challengeId && !g.archived && g.setId === id));
-  const sets = (used.length ? used : ['worship']).map((id) => ({ id, name: null }));
-  return { ...s, goals, sets };
+  const sets = [...have];
+  used.forEach((id) => { if (!sets.some((x) => x.id === id)) { sets.push({ id, name: null }); changed = true; } });
+  if (!sets.length) { sets.push({ id: 'worship', name: null }); changed = true; }
+  sets.sort((a, b) => SET_IDS.indexOf(a.id) - SET_IDS.indexOf(b.id));
+  return changed || sets.length !== (s.sets || []).length ? { ...s, goals, sets } : s;
 }
 export function setGoals(state, setId, list) {
   return (list || state.goals).filter((g) => !g.challengeId && !g.archived && (g.setId || 'worship') === setId);
