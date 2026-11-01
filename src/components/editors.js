@@ -257,12 +257,12 @@ export function CatalogTiles({ items, selected, onToggle }) {
 }
 
 // ---- Catalog list grouped by pack (used when adding goals from Settings)
-export function CatalogList({ selected, onToggle, exclude = [] }) {
+export function CatalogList({ selected, onToggle, exclude = [], only }) {
   const { t } = useStore();
   const groups = [
     { key: 'muslim', title: t('muslimPack') },
     { key: 'life', title: t('lifePack') },
-  ];
+  ].filter((g) => !only || g.key === only); // a set only offers its own suggestions
   return (
     <View style={{ gap: 22 }}>
       {groups.map((g) => {
@@ -281,7 +281,7 @@ export function CatalogList({ selected, onToggle, exclude = [] }) {
   );
 }
 
-export function CatalogSheet({ onClose, onAdd }) {
+export function CatalogSheet({ onClose, onAdd, setId }) {
   const { state, t } = useStore();
   const have = useMemo(() => state.goals.filter((g) => !g.archived && !g.challengeId && g.catalogId).map((g) => g.catalogId), [state.goals]);
   const [sel, setSel] = useState([]);
@@ -289,7 +289,7 @@ export function CatalogSheet({ onClose, onAdd }) {
     <Sheet onClose={onClose}>
       <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
         <H2>{t('addFromList')}</H2>
-        <CatalogList selected={sel} exclude={have} onToggle={(id) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))} />
+        <CatalogList selected={sel} exclude={have} only={setId ? (setId === 'strong' ? 'life' : 'muslim') : null} onToggle={(id) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))} />
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Button title={t('cancel')} kind="secondary" onPress={onClose} style={{ flex: 1 }} />
           <Button title={t('addGoal')} disabled={!sel.length} onPress={() => onAdd(sel.map((id) => goalFromCatalog(catalogItem(id))))} style={{ flex: 1 }} />

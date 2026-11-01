@@ -123,7 +123,7 @@ export default function Settings() {
           }}
           onDelete={() => { setDel(edit); setEdit(null); }} />
       ) : null}
-      {adding ? <CatalogSheet onClose={() => setAdding(null)} onAdd={(list) => { list.forEach((g) => actions.addGoal({ ...g, setId: adding })); setAdding(null); }} /> : null}
+      {adding ? <CatalogSheet setId={adding} onClose={() => setAdding(null)} onAdd={(list) => { list.forEach((g) => actions.addGoal({ ...g, setId: adding })); setAdding(null); }} /> : null}
       {del ? (
         <Confirm danger text={t('deleteConfirm', { name: goalTitle(del, lang, catalogItem) })} yes={t('delete')} no={t('cancel')}
           onNo={() => setDel(null)} onYes={() => { actions.deleteGoal(del.id); setDel(null); }} />
