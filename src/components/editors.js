@@ -360,10 +360,10 @@ function ReminderSheet({ visible, value, goals, onClose, onSave }) {
   useEffect(() => {
     if (!visible) return;
     const [a, b] = (value.time || '05:00').split(':').map(Number);
-    setH(a); setM(b - (b % 5)); setLabel(value.label || ''); setIds(value.goalIds || []);
+    setH(a); setM(b); setLabel(value.label || ''); setIds(value.goalIds || []);
   }, [visible]);
   const hours = Array.from({ length: 24 }, (_, k) => ({ value: k, label: p2(k) }));
-  const mins = Array.from({ length: 12 }, (_, k) => ({ value: k * 5, label: p2(k * 5) }));
+  const mins = Array.from({ length: 60 }, (_, k) => ({ value: k, label: p2(k) }));
   return (
     <ModalSheet visible={visible} onClose={onClose}>
       <ScrollView style={{ maxHeight: 620 }} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }} keyboardShouldPersistTaps="handled">

@@ -347,11 +347,11 @@ export function TimePickerSheet({ visible, value, onDone, onClose, title }) {
   const { t } = useStore();
   const [h0, m0] = (value || '05:00').split(':').map(Number);
   const [h, setH] = useState(h0);
-  const [m, setM] = useState(m0 - (m0 % 5));
-  useEffect(() => { if (visible) { const [a, b] = (value || '05:00').split(':').map(Number); setH(a); setM(b - (b % 5)); } }, [visible, value]);
+  const [m, setM] = useState(m0);
+  useEffect(() => { if (visible) { const [a, b] = (value || '05:00').split(':').map(Number); setH(a); setM(b); } }, [visible, value]);
   const p2 = (n) => (n < 10 ? '0' + n : '' + n);
   const hours = Array.from({ length: 24 }, (_, k) => ({ value: k, label: p2(k) }));
-  const mins = Array.from({ length: 12 }, (_, k) => ({ value: k * 5, label: p2(k * 5) }));
+  const mins = Array.from({ length: 60 }, (_, k) => ({ value: k, label: p2(k) }));
   return (
     <ModalSheet visible={visible} onClose={onClose}>
       <View style={{ paddingHorizontal: 20, gap: 14 }}>
