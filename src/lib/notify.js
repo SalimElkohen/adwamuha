@@ -28,31 +28,29 @@ export async function ensurePermission() {
   }
 }
 
-// Re-schedules the two daily reminders. Called on launch and whenever settings change,
+// Re-schedules the daily reminders (any number, each at its own time). Called on launch and whenever settings change,
 // so the hadith in each reminder rotates.
 export async function scheduleReminders(state, t) {
   if (Platform.OS === 'web') return;
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
-    const r = state.reminders || {};
-    if (!r.morning && !r.evening) return;
+    const list = ((state.reminders || {}).list || []).filter((x) => x.on);
+    if (!list.length) return;
     const ok = await ensurePermission();
     if (!ok) return;
     const lang = state.lang === 'ar' ? 'ar' : 'en';
     const dayNo = Math.floor(Date.now() / 86400000);
     const pick = (use, offset) => {
-      const list = HADITH.filter((h) => h.use.includes(use));
-      return list[(dayNo + offset) % list.length];
+      const pool = HADITH.filter((h) => h.use.includes(use));
+      return pool[(dayNo + offset) % pool.length];
     };
-    const jobs = [];
-    if (r.morning) {
-      const h = pick('morning', 0);
-      jobs.push({ title: t('notifMorningTitle'), body: (lang === 'ar' ? h.ar : h.en) + ' (' + (lang === 'ar' ? h.refAr : h.refEn) + ')', time: parseTime(r.morningTime, { hour: 5, minute: 0 }) });
-    }
-    if (r.evening) {
-      const h = pick('evening', 1);
-      jobs.push({ title: t('notifEveningTitle'), body: (lang === 'ar' ? h.ar : h.en) + ' (' + (lang === 'ar' ? h.refAr : h.refEn) + ')', time: parseTime(r.eveningTime, { hour: 18, minute: 0 }) });
-    }
+    // each reminder at its own time; before noon a morning title and hadith, after noon an evening one
+    const jobs = list.map((x, i) => {
+      const time = parseTime(x.time, { hour: 5, minute: 0 });
+      const am = time.hour < 12;
+      const h = pick(am ? 'morning' : 'evening', i);
+      return { title: t(am ? 'notifMorningTitle' : 'notifEveningTitle'), body: (lang === 'ar' ? h.ar : h.en) + ' (' + (lang === 'ar' ? h.refAr : h.refEn) + ')', time };
+    });
     for (const j of jobs) {
       await Notifications.scheduleNotificationAsync({
         content: { title: j.title, body: j.body },

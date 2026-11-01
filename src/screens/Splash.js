@@ -44,9 +44,15 @@ function archLength(xL, xR, ys, yb, k = 0.66) {
 }
 
 // The opening sequence, in milliseconds.
-export const INTRO = { total: 2300, pattern: [0, 700], arch: [200, 1300], inner: [450, 1300], fill: [700, 800], star: [1300, 450], text: 1400, brand: 1800, hold: 3000, swap: 1000, after: 3000 };
-// hadith fully shown at total; it stays `hold` ms, then gives way to the logo (`swap` ms); `after` ms later the "tap to continue" hint appears
-const TAP_AT = INTRO.total + INTRO.hold + INTRO.swap + INTRO.after;
+export const INTRO = { total: 2300, pattern: [0, 700], arch: [200, 1300], inner: [450, 1300], fill: [700, 800], star: [1300, 450], text: 1400, brand: 1800, hold: 2500, focus: 700, zoom: 1100, morph: 700, after: 2000 };
+// hadith fully shown at total; it stays `hold` ms. Then the word أدومها lights up while the rest fades (`focus`),
+// glides to the centre and grows (`zoom`), and turns into the logo (`morph`); `after` ms later "tap to continue" appears
+const SEQ_AT = INTRO.total + INTRO.hold;
+const TAP_AT = SEQ_AT + INTRO.focus + INTRO.zoom + INTRO.morph + INTRO.after;
+// the hadith in two fixed lines, with the app's name as its own word
+const LINE1 = 'أَحَبُّ الأعمالِ إلى اللهِ';
+const WORD = 'أدْومُها';
+const REST = 'وإن قَلَّ';
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const ease = (v) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 const phase = (t, [start, dur]) => ease(clamp01((t - start) / dur));
@@ -98,19 +104,35 @@ export default function Splash({ onDone }) {
   const short = WELCOME.ar.length < 70; // a short hadith gets larger type
   const [size, setSize] = useState(null);
   const fade = useRef(new Animated.Value(0)).current;
-  const brand = useRef(new Animated.Value(0)).current;
-  const swap = useRef(new Animated.Value(0)).current; // 0 = hadith, 1 = logo in the centre
+  const focus = useRef(new Animated.Value(0)).current; // the word lights up, the rest fades
+  const zoom = useRef(new Animated.Value(0)).current; // the word moves to the centre and grows
+  const morph = useRef(new Animated.Value(0)).current; // the word becomes the logo
   const hint = useRef(new Animated.Value(0)).current; // "tap to continue"
   const [canTap, setCanTap] = useState(false);
   const [t, setT] = useState(0); // time into the opening sequence, ms
+  const lay = useRef({}).current; // layout of the hadith pieces, to know where the word sits
+  const [wordBox, setWordBox] = useState(null);
+  const onLay = (k) => (e) => {
+    lay[k] = e.nativeEvent.layout;
+    if (lay.block && lay.row && lay.word) {
+      const x = lay.block.x + lay.row.x + lay.word.x, y = lay.block.y + lay.row.y + lay.word.y;
+      setWordBox((o) => (o && o.x === x && o.y === y && o.w === lay.word.width ? o : { x, y, w: lay.word.width, h: lay.word.height }));
+    }
+  };
 
   useEffect(() => {
     let raf, alive = true;
+    const io = Easing.inOut(Easing.cubic);
     const run = (reduce) => {
       if (!alive) return;
       if (reduce) {
-        setT(INTRO.total); fade.setValue(1); brand.setValue(1);
-        Animated.timing(swap, { toValue: 1, duration: 400, delay: INTRO.hold, useNativeDriver: true }).start();
+        // no movement: the rest fades, then the word fades into the logo in place
+        setT(INTRO.total); fade.setValue(1);
+        Animated.sequence([
+          Animated.delay(INTRO.hold),
+          Animated.timing(focus, { toValue: 1, duration: 400, useNativeDriver: true }),
+          Animated.timing(morph, { toValue: 1, duration: 500, useNativeDriver: true }),
+        ]).start();
         return;
       }
       const t0 = Date.now();
@@ -122,8 +144,9 @@ export default function Splash({ onDone }) {
       };
       raf = requestAnimationFrame(tick);
       Animated.timing(fade, { toValue: 1, duration: 900, delay: INTRO.text, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-      Animated.timing(brand, { toValue: 1, duration: 700, delay: INTRO.brand, useNativeDriver: true }).start();
-      Animated.timing(swap, { toValue: 1, duration: INTRO.swap, delay: INTRO.total + INTRO.hold, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }).start();
+      Animated.timing(focus, { toValue: 1, duration: INTRO.focus, delay: SEQ_AT, easing: io, useNativeDriver: true }).start();
+      Animated.timing(zoom, { toValue: 1, duration: INTRO.zoom, delay: SEQ_AT + INTRO.focus, easing: io, useNativeDriver: true }).start();
+      Animated.timing(morph, { toValue: 1, duration: INTRO.morph, delay: SEQ_AT + INTRO.focus + INTRO.zoom - 150, easing: io, useNativeDriver: true }).start();
     };
     Promise.resolve(AccessibilityInfo && AccessibilityInfo.isReduceMotionEnabled ? AccessibilityInfo.isReduceMotionEnabled() : false)
       .then(run, () => run(false));
@@ -134,7 +157,7 @@ export default function Splash({ onDone }) {
       Animated.timing(hint, { toValue: 1, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     }, TAP_AT);
     return () => { alive = false; cancelAnimationFrame(raf); clearTimeout(id); };
-  }, [fade, brand, swap, hint]);
+  }, [fade, focus, zoom, morph, hint]);
 
   let body = null;
   if (size) {
@@ -150,40 +173,59 @@ export default function Splash({ onDone }) {
     const span = xR - xL, r = span * 0.66, dy = Math.max(0, ys - (top + 6));
     const edge = dy > 0 ? xL + r - Math.sqrt(Math.max(0, r * r - dy * dy)) : xL;
     const inset = Math.max(xL + 18, edge + 12);
-    const LOGO_W = Math.min(300, (xR - xL) * 0.86); // final width in the centre
+    const LOGO_W = Math.min(300, (xR - xL) * 0.86); // logo width in the centre
     const LOGO_H = (LOGO_W * 190) / 330;
-    const LOGO_START = 120 / LOGO_W; // about 120 pt wide while resting at the bottom
-    // resting place under the arch, just above the "tap to continue" hint
-    const restCentre = H - 38 - (LOGO_H * LOGO_START) / 2;
-    const logoTop = restCentre - LOGO_H / 2;
+    const sc = LOGO_W / 330;
     const centre = top + (yb - top) * 0.42; // optical centre of the niche
-    const logoRise = centre - (logoTop + LOGO_H / 2);
+    const logoTop = centre - LOGO_H / 2;
+    const AR = 31 * s; // hadith type size
+    // where the word goes: the centre of the logo's Arabic, at the logo's size
+    let wx = 0, wy = 0, k = 1;
+    if (wordBox) {
+      const cx = inset + wordBox.x + wordBox.w / 2, cy = top + wordBox.y + wordBox.h / 2;
+      wx = W / 2 - cx;
+      wy = logoTop + 92 * sc - cy;
+      k = (0.93 * 118 * sc) / AR; // Amiri Regular with vowel marks runs a little wider than the logo's Bold
+    }
+    const others = Animated.multiply(fade, focus.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }));
+    const arText = { fontFamily: 'Amiri-Regular', fontSize: AR, lineHeight: AR * 1.9, color: M.ink, textAlign: 'center' };
     body = (
       <>
         <Backdrop W={W} H={H} arch={arch} t={t} />
-        <Animated.View style={{ position: 'absolute', left: inset, right: inset, top, bottom: H - yb + 14, justifyContent: 'center', gap: (short ? 20 : 14) * s, opacity: Animated.multiply(fade, swap.interpolate({ inputRange: [0, 0.45], outputRange: [1, 0], extrapolate: 'clamp' })), transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }}>
-          <Text style={{ fontFamily: 'Amiri-Regular', fontSize: 18 * s, lineHeight: 30 * s, color: M.gold, textAlign: 'center', writingDirection: 'rtl', marginBottom: -6 * s }}>{WELCOME.introAr}</Text>
-          <Text style={{ fontFamily: 'Amiri-Regular', fontSize: (short ? 32 : 23) * s, lineHeight: (short ? 62 : 46) * s, color: M.ink, textAlign: 'center', writingDirection: 'rtl' }}>{WELCOME.ar}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <Animated.View style={{ position: 'absolute', left: inset, right: inset, top, bottom: H - yb + 14, justifyContent: 'center', gap: 14 * s, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }}>
+          <Animated.Text style={{ fontFamily: 'Amiri-Regular', fontSize: 18 * s, lineHeight: 30 * s, color: M.gold, textAlign: 'center', writingDirection: 'rtl', marginBottom: -6 * s, opacity: others }}>{WELCOME.introAr}</Animated.Text>
+          <Animated.View onLayout={onLay('block')} style={{ alignItems: 'center', opacity: fade }}>
+            <Animated.Text numberOfLines={1} style={[arText, { writingDirection: 'rtl', opacity: focus.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}>{LINE1}</Animated.Text>
+            {/* row-reverse with ltr direction: the word sits on the right, as Arabic reads, in either app language */}
+            <View onLayout={onLay('row')} style={{ flexDirection: 'row-reverse', direction: 'ltr', justifyContent: 'center', alignItems: 'center', gap: 9 * s }}>
+              <Animated.View onLayout={onLay('word')} style={{ opacity: morph.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), zIndex: 2,
+                transform: [
+                  { translateX: zoom.interpolate({ inputRange: [0, 1], outputRange: [0, wx] }) },
+                  { translateY: zoom.interpolate({ inputRange: [0, 1], outputRange: [0, wy] }) },
+                  { scale: zoom.interpolate({ inputRange: [0, 1], outputRange: [1, k] }) },
+                ] }}>
+                <Text style={arText}>{WORD}</Text>
+                <Animated.Text style={[arText, { position: 'absolute', left: 0, right: 0, top: 0, color: M.gold, opacity: focus }]}>{WORD}</Animated.Text>
+              </Animated.View>
+              <Animated.Text style={[arText, { opacity: focus.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}>{REST}</Animated.Text>
+            </View>
+          </Animated.View>
+          <Animated.View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: others }}>
             <View style={{ width: 34, height: 1, backgroundColor: M.goldSoft }} />
             <View style={{ width: 7, height: 7, backgroundColor: M.gold, transform: [{ rotate: '45deg' }] }} />
             <View style={{ width: 34, height: 1, backgroundColor: M.goldSoft }} />
-          </View>
+          </Animated.View>
           {!ar ? (
-            <Text style={{ fontFamily: 'Amiri-Italic', fontSize: (short ? 18 : 15.5) * s, lineHeight: (short ? 27 : 23) * s, color: M.inkSoft, textAlign: 'center' }}>{WELCOME.introEn} “{WELCOME.en}”</Text>
+            <Animated.Text style={{ fontFamily: 'Amiri-Italic', fontSize: 18 * s, lineHeight: 27 * s, color: M.inkSoft, textAlign: 'center', opacity: others }}>{WELCOME.introEn} “{WELCOME.en}”</Animated.Text>
           ) : null}
-          <Text style={{ fontFamily: 'Amiri-Regular', fontSize: (short ? 15 : 13.5) * s, color: M.gold, textAlign: 'center', letterSpacing: ar ? 0 : 0.6 }}>{ar ? WELCOME.refAr : WELCOME.refEn}</Text>
+          <Animated.Text style={{ fontFamily: 'Amiri-Regular', fontSize: 15 * s, color: M.gold, textAlign: 'center', letterSpacing: ar ? 0 : 0.6, opacity: others }}>{ar ? WELCOME.refAr : WELCOME.refEn}</Animated.Text>
         </Animated.View>
-        {/* the logo is drawn at its final size and starts scaled down at the bottom, so it stays sharp as it grows */}
-        <Animated.View style={{ position: 'absolute', left: 0, right: 0, top: logoTop, height: LOGO_H, alignItems: 'center', justifyContent: 'center', opacity: brand,
-          transform: [
-            { translateY: swap.interpolate({ inputRange: [0, 1], outputRange: [0, logoRise] }) },
-            { scale: swap.interpolate({ inputRange: [0, 1], outputRange: [LOGO_START, 1] }) },
-          ] }}>
+        {/* the logo appears where the word arrives */}
+        <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: logoTop, height: LOGO_H, alignItems: 'center', justifyContent: 'center', opacity: morph }}>
           <Logo width={LOGO_W} gold={M.gold} latin={M.ink} id="splash" />
         </Animated.View>
-        <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 14, alignItems: 'center', opacity: hint, transform: [{ translateY: hint.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }}>
-          <Text style={{ fontSize: 13, color: M.gold, letterSpacing: 0.6 }}>{tr('tapToContinue')}</Text>
+        <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 18, alignItems: 'center', opacity: hint, transform: [{ translateY: hint.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }}>
+          <Text style={{ fontSize: 16, color: M.gold, letterSpacing: 0.6, fontWeight: '500' }}>{tr('tapToContinue')}</Text>
         </Animated.View>
       </>
     );

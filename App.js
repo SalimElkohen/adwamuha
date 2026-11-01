@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -25,13 +25,20 @@ function Main() {
   const { state, t, rtl } = useStore();
   const [splash, setSplash] = useState(true);
   const [tab, setTab] = useState('today');
+  // right after onboarding, open Today and ignore the finishing tap so it cannot land on a tab
+  const tabsReadyAt = useRef(0);
+  const wasOnboarded = useRef(state.onboarded);
+  useEffect(() => {
+    if (state.onboarded && !wasOnboarded.current) { setTab('today'); tabsReadyAt.current = Date.now() + 800; }
+    wasOnboarded.current = state.onboarded;
+  }, [state.onboarded]);
   const done = useCallback(() => setSplash(false), []);
 
   const r = state.reminders;
   useEffect(() => {
     if (state.onboarded) scheduleReminders(state, t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.onboarded, state.lang, r.morning, r.evening, r.morningTime, r.eveningTime]);
+  }, [state.onboarded, state.lang, JSON.stringify(r.list || [])]);
 
   let body;
   if (splash) body = <Splash onDone={done} />;
@@ -45,7 +52,7 @@ function Main() {
           {TABS.map((x) => {
             const on = tab === x.key;
             return (
-              <Pressable key={x.key} onPress={() => setTab(x.key)} accessibilityRole="tab" accessibilityState={{ selected: on }}
+              <Pressable key={x.key} onPress={() => { if (Date.now() >= tabsReadyAt.current) setTab(x.key); }} accessibilityRole="tab" accessibilityState={{ selected: on }}
                 style={{ flex: 1, alignItems: 'center', paddingVertical: 2, gap: 4 }}>
                 <TabIcon name={x.key} color={on ? C.accent : C.faint} />
                 <Text style={{ fontSize: 11, letterSpacing: 0.3, fontWeight: on ? '600' : '400', color: on ? C.accent : C.faint }}>{t(x.label)}</Text>

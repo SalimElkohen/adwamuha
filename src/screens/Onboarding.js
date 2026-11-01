@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H1, Label, Button, Card, Divider, Segmented, RadioList, Toggle } from '../components/ui';
-import { CatalogRows, GoalEditor, PeriodPicker } from '../components/editors';
+import { CatalogRows, GoalEditor, PeriodPicker, ReminderList } from '../components/editors';
 import { SET_IDS, defaultName } from '../lib/sets';
 import Logo from '../components/Logo';
 import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
@@ -19,7 +19,7 @@ export default function Onboarding() {
   const [editing, setEditing] = useState(null); // set id the new goal goes into
   const [period, setPeriod] = useState({ start: todayKey(), end: null });
   const [adj, setAdj] = useState(0);
-  const [rem, setRem] = useState({ morning: true, evening: true });
+  const [remList, setRemList] = useState([]); // no reminders until the user adds some
   const lang = state.lang;
   const rtl = lang === 'ar';
   const inSet = (id) => picked[id].length + custom.filter((g) => g.setId === id).length;
@@ -32,7 +32,7 @@ export default function Onboarding() {
       ...active.flatMap((id) => picked[id].map((c) => goalFromCatalog(catalogItem(c), { start: period.start, setId: id }))),
       ...custom.map((g) => ({ ...g, start: period.start })),
     ];
-    actions.finishOnboarding({ lang, sets, goals, period, hijriAdjust: adj, reminders: rem });
+    actions.finishOnboarding({ lang, sets, goals, period, hijriAdjust: adj, reminders: { list: remList } });
   };
 
   const footer = (canNext, onNext, nextLabel) => (
@@ -65,7 +65,9 @@ export default function Onboarding() {
           <T center style={{ color: C.muted, lineHeight: 24 }}>{t('welcomeBody')}</T>
           <View style={{ gap: 4, marginTop: 18 }}>
             <Label style={{ textAlign: 'center' }}>{t('chooseLanguage')}</Label>
+            <View style={{ direction: 'ltr' }}>{/* English left, العربية right, in both languages */}
             <Segmented value={lang} onChange={actions.setLang} options={[{ value: 'en', label: 'English' }, { value: 'ar', label: 'العربية' }]} />
+          </View>
           </View>
         </ScrollView>
         {footer(true, () => setStep(1), t('start'))}
@@ -84,13 +86,18 @@ export default function Onboarding() {
           <Card style={{ paddingVertical: 4, paddingHorizontal: 16, borderColor: on ? C.accent : C.line }}>
             <View style={{ paddingTop: 12, paddingBottom: 12, gap: 6 }}>
               <T style={{ fontFamily: F.serif, fontSize: 22, lineHeight: 32, color: on ? C.ink : C.muted }}>{defaultName(id, t)}</T>
-              {id === 'strong' ? (
-                <View style={{ gap: 2, paddingTop: 2 }}>
-                  <Text style={{ fontFamily: F.serifRegular, fontSize: 15, lineHeight: 26, color: C.gold, textAlign: 'right', writingDirection: 'rtl', direction: 'rtl' }}>{rtl ? t('setStrongHadith') : '«المؤمنُ القويُّ خيرٌ وأحبُّ إلى اللهِ من المؤمنِ الضعيفِ، وفي كلٍّ خيرٌ»'}</Text>
-                  {!rtl ? <T style={{ fontSize: 12, lineHeight: 17, color: C.muted, fontStyle: 'italic' }}>{t('setStrongHadith')}</T> : null}
-                  <T style={{ fontSize: 11, color: C.faint, letterSpacing: 0.4 }}>{t('setStrongRef')}</T>
-                </View>
-              ) : null}
+              {(() => {
+                // each set shows its hadith: Arabic always, the English meaning in English mode
+                const k = id === 'strong' ? 'setStrong' : 'setWorship';
+                const arText = id === 'strong' ? '«المؤمنُ القويُّ خيرٌ وأحبُّ إلى اللهِ من المؤمنِ الضعيفِ، وفي كلٍّ خيرٌ»' : '«وما يَزالُ عبدي يتقرَّبُ إليَّ بالنَّوافلِ حتى أُحِبَّه»';
+                return (
+                  <View style={{ gap: 2, paddingTop: 2 }}>
+                    <Text style={{ fontFamily: F.serifRegular, fontSize: 15, lineHeight: 26, color: C.gold, textAlign: 'right', writingDirection: 'rtl', direction: 'rtl' }}>{rtl ? t(k + 'Hadith') : arText}</Text>
+                    {!rtl ? <T style={{ fontSize: 12, lineHeight: 17, color: C.muted, fontStyle: 'italic' }}>{t(k + 'Hadith')}</T> : null}
+                    <T style={{ fontSize: 11, color: C.faint, letterSpacing: 0.4 }}>{t(k + 'Ref')}</T>
+                  </View>
+                );
+              })()}
               {!on ? <T style={{ fontSize: 12, color: C.faint }}>{t('setOff')}</T> : null}
             </View>
             <Divider />
@@ -166,9 +173,7 @@ export default function Onboarding() {
         <H1>{t('remindersTitle')}</H1>
         <T style={{ color: C.muted }}>{t('remindersHint')}</T>
         <Card style={{ paddingHorizontal: 16, paddingVertical: 2 }}>
-          <Toggle label={t('morning')} sub="05:00" value={rem.morning} onChange={(v) => setRem({ ...rem, morning: v })} />
-          <Divider />
-          <Toggle label={t('evening')} sub="18:00" value={rem.evening} onChange={(v) => setRem({ ...rem, evening: v })} />
+          <ReminderList list={remList} onChange={setRemList} />
         </Card>
       </ScrollView>
       {footer(true, finish, t('finish'))}

@@ -18,13 +18,23 @@ export function initialState() {
     sets: [], // [{ id: 'worship' | 'strong', name: string | null }] – at most two
     goals: [],
     marks: {},
-    reminders: { morning: true, evening: true, morningTime: '05:00', eveningTime: '18:00' },
+    reminders: { list: [] }, // [{ id, time: 'HH:MM', on }] – none until the user adds one
     challenges: [], // { id, title:{en,ar}, start, end, goalIds }
     history: [], // { id, title, start, end, pct, finishedAt }
     excused: {}, // { 'YYYY-MM-DD': 'all' } – travelling or ill
     seen: {}, // cards already shown and closed (milestones, seasons, restarts)
     growSnooze: {}, // { goalId: 'YYYY-MM-DD' } – ask again after this day
   };
+}
+
+// older installs had two fixed reminders: keep them as list entries
+function migrateReminders(s) {
+  const r = s.reminders || {};
+  if (Array.isArray(r.list)) return s;
+  const list = [];
+  if (s.onboarded && r.morning) list.push({ id: 'r_m', time: r.morningTime || '05:00', on: true });
+  if (s.onboarded && r.evening) list.push({ id: 'r_e', time: r.eveningTime || '18:00', on: true });
+  return { ...s, reminders: { list } };
 }
 
 const Ctx = createContext(null);
@@ -40,7 +50,7 @@ export function StoreProvider({ children }) {
         if (!alive) return;
         let s = initialState();
         if (raw) {
-          try { s = migrateSets({ ...s, ...JSON.parse(raw) }); } catch (e) {}
+          try { s = migrateReminders(migrateSets({ ...s, ...JSON.parse(raw) })); } catch (e) {}
         }
         setState(s);
       })

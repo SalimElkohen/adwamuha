@@ -1,9 +1,9 @@
-import React from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { C, F, R } from '../theme';
 import { useStore } from '../lib/store';
-import { fmtDate, hijriText, addDays, todayKey } from '../lib/dates';
+import { fmtDate, hijriText, addDays, todayKey, toKey, fromKey, daysInMonth, G_MONTHS_LONG } from '../lib/dates';
 
 // Text that aligns to the reading direction of the current language.
 export function T({ style, children, center, ...rest }) {
@@ -233,5 +233,139 @@ export function Confirm({ text, yes, no, onYes, onNo, danger }) {
         </View>
       </View>
     </Sheet>
+  );
+}
+
+// ---- Pickers shown in a full-screen modal (works from inside scroll views)
+export function ModalSheet({ visible, onClose, children }) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+        <Pressable onPress={onClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(8,30,22,0.6)' }} accessibilityLabel="Close" />
+        <View style={{ backgroundColor: C.bgDeep, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderTopWidth: 1, borderColor: C.line, paddingTop: 10, paddingBottom: 30 }}>
+          <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.line, marginBottom: 6 }} />
+          {children}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const ROW = 44;
+// one scrollable column of choices; the chosen one is gold
+export function PickerColumn({ items, value, onChange, flex = 1 }) {
+  const ref = useRef(null);
+  const i = Math.max(0, items.findIndex((x) => x.value === value));
+  useEffect(() => {
+    const id = setTimeout(() => ref.current && ref.current.scrollTo({ y: Math.max(0, i * ROW - ROW * 2), animated: false }), 0);
+    return () => clearTimeout(id);
+  }, [i]);
+  return (
+    <View style={{ flex, height: ROW * 5, borderRadius: 14, borderWidth: 1, borderColor: C.line, overflow: 'hidden' }}>
+      <ScrollView ref={ref} showsVerticalScrollIndicator={false}>
+        {items.map((x) => {
+          const on = x.value === value;
+          return (
+            <Pressable key={String(x.value)} onPress={() => onChange(x.value)} accessibilityRole="button" accessibilityState={{ selected: on }}
+              style={{ height: ROW, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? C.accentSoft : 'transparent' }}>
+              <Text style={{ fontSize: 17, color: on ? C.gold : C.muted, fontWeight: on ? '700' : '400', fontVariant: ['tabular-nums'] }}>{x.label}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+// Date chosen from day / month / year menus, with the Hijri equivalent
+export function DatePickerSheet({ visible, value, min, hijriAdjust, onDone, onClose, title }) {
+  const { state, t } = useStore();
+  const lang = state.lang;
+  const adj = hijriAdjust != null ? hijriAdjust : state.hijriAdjust;
+  const d0 = fromKey(value || todayKey());
+  const [y, setY] = useState(d0.getFullYear());
+  const [m, setM] = useState(d0.getMonth() + 1);
+  const [d, setD] = useState(d0.getDate());
+  useEffect(() => {
+    if (!visible) return;
+    const x = fromKey(value || todayKey());
+    setY(x.getFullYear()); setM(x.getMonth() + 1); setD(x.getDate());
+  }, [visible, value]);
+  const dd = Math.min(d, daysInMonth(y, m));
+  let key = toKey(new Date(y, m - 1, dd));
+  const tooEarly = min && key < min;
+  const thisYear = new Date().getFullYear();
+  const years = [thisYear - 1, thisYear, thisYear + 1, thisYear + 2].map((v) => ({ value: v, label: String(v) }));
+  const months = G_MONTHS_LONG[lang === 'ar' ? 'ar' : 'en'].map((n, k) => ({ value: k + 1, label: n }));
+  const days = Array.from({ length: daysInMonth(y, m) }, (_, k) => ({ value: k + 1, label: String(k + 1) }));
+  return (
+    <ModalSheet visible={visible} onClose={onClose}>
+      <View style={{ paddingHorizontal: 20, gap: 14 }}>
+        {title ? <Label style={{ marginBottom: 0 }}>{title}</Label> : null}
+        <View>
+          <T style={{ fontFamily: F.serif, fontSize: 21, lineHeight: 30 }}>{fmtDate(key, lang, { weekday: true, year: true })}</T>
+          <T style={{ color: C.gold, fontSize: 14 }}>{hijriText(key, lang, adj)}</T>
+          {tooEarly ? <T style={{ color: C.miss, fontSize: 13 }}>{t('dateTooEarly')}</T> : null}
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8, direction: 'ltr' }}>
+          <PickerColumn items={days} value={dd} onChange={setD} flex={0.8} />
+          <PickerColumn items={months} value={m} onChange={setM} flex={1.6} />
+          <PickerColumn items={years} value={y} onChange={setY} flex={1} />
+        </View>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Button title={t('cancel')} kind="secondary" onPress={onClose} style={{ flex: 1 }} />
+          <Button title={t('done')} disabled={!!tooEarly} onPress={() => onDone(key)} style={{ flex: 1 }} />
+        </View>
+      </View>
+    </ModalSheet>
+  );
+}
+
+// A date shown with its Hijri equivalent; tapping it opens the date menus
+export function DateField({ value, onChange, min, hijriAdjust, title }) {
+  const { state, t } = useStore();
+  const lang = state.lang;
+  const adj = hijriAdjust != null ? hijriAdjust : state.hijriAdjust;
+  const [open, setOpen] = useState(false);
+  return (
+    <View>
+      <Pressable onPress={() => setOpen(true)} accessibilityRole="button"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 }}>
+        <View style={{ flex: 1 }}>
+          <T style={{ fontFamily: F.serif, fontSize: 20, lineHeight: 28 }}>{fmtDate(value, lang, { weekday: true, year: true })}</T>
+          <T style={{ color: C.gold, fontSize: 14 }}>{hijriText(value, lang, adj)}</T>
+        </View>
+        <Text style={{ color: C.gold, fontSize: 14, fontWeight: '600' }}>{t('change')}</Text>
+      </Pressable>
+      <DatePickerSheet visible={open} value={value} min={min} hijriAdjust={adj} title={title} onClose={() => setOpen(false)} onDone={(k) => { setOpen(false); onChange(k); }} />
+    </View>
+  );
+}
+
+// Time chosen from hour / minute menus
+export function TimePickerSheet({ visible, value, onDone, onClose, title }) {
+  const { t } = useStore();
+  const [h0, m0] = (value || '05:00').split(':').map(Number);
+  const [h, setH] = useState(h0);
+  const [m, setM] = useState(m0 - (m0 % 5));
+  useEffect(() => { if (visible) { const [a, b] = (value || '05:00').split(':').map(Number); setH(a); setM(b - (b % 5)); } }, [visible, value]);
+  const p2 = (n) => (n < 10 ? '0' + n : '' + n);
+  const hours = Array.from({ length: 24 }, (_, k) => ({ value: k, label: p2(k) }));
+  const mins = Array.from({ length: 12 }, (_, k) => ({ value: k * 5, label: p2(k * 5) }));
+  return (
+    <ModalSheet visible={visible} onClose={onClose}>
+      <View style={{ paddingHorizontal: 20, gap: 14 }}>
+        {title ? <Label style={{ marginBottom: 0 }}>{title}</Label> : null}
+        <Text style={{ fontFamily: F.serif, fontSize: 40, lineHeight: 52, color: C.ink, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{p2(h)}:{p2(m)}</Text>
+        <View style={{ flexDirection: 'row', gap: 8, direction: 'ltr' }}>
+          <PickerColumn items={hours} value={h} onChange={setH} />
+          <PickerColumn items={mins} value={m} onChange={setM} />
+        </View>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Button title={t('cancel')} kind="secondary" onPress={onClose} style={{ flex: 1 }} />
+          <Button title={t('done')} onPress={() => onDone(p2(h) + ':' + p2(m))} style={{ flex: 1 }} />
+        </View>
+      </View>
+    </ModalSheet>
   );
 }

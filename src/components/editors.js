@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
-import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateStepper, Sheet, Radio, RadioList } from './ui';
+import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateField, Sheet, Radio, RadioList, TimePickerSheet } from './ui';
 import { setName as setTitle } from '../lib/sets';
 import { goalDays } from '../lib/stats';
 import { addDays, dayBeforeRamadan, diffDays, fmtDate, hijriText, nextHijri, HIJRI_MONTHS } from '../lib/dates';
@@ -49,14 +49,13 @@ export function PeriodPicker({ value, onChange, hijriAdjust }) {
     { value: 'days', label: t('numberOfDays') },
     { value: 'ramadan', label: t('untilRamadan') },
     { value: 'date', label: t('untilDate') },
-    { value: 'hijri', label: t('untilHijri') },
   ];
 
   return (
     <View style={{ gap: 16 }}>
       <Card style={{ gap: 6 }}>
         <Label>{t('startDate')}</Label>
-        <DateStepper value={value.start} hijriAdjust={adj} onChange={(k) => apply({ start: k })} />
+        <DateField value={value.start} hijriAdjust={adj} title={t('startDate')} onChange={(k) => apply({ start: k })} />
       </Card>
 
       <Card style={{ paddingVertical: 6 }}>
@@ -78,7 +77,7 @@ export function PeriodPicker({ value, onChange, hijriAdjust }) {
               ) : null}
               {on && mode === 'date' ? (
                 <View style={{ paddingBottom: 14 }}>
-                  <DateStepper value={value.end || addDays(value.start, 29)} min={value.start} hijriAdjust={adj} onChange={(k) => onChange({ start: value.start, end: k })} />
+                  <DateField value={value.end || addDays(value.start, 29)} min={value.start} hijriAdjust={adj} title={t('endDate')} onChange={(k) => onChange({ start: value.start, end: k })} />
                 </View>
               ) : null}
               {on && mode === 'hijri' ? (
@@ -106,7 +105,7 @@ export function PeriodPicker({ value, onChange, hijriAdjust }) {
             <T center style={{ color: C.gold, fontSize: 14 }}>{hijriText(value.end, lang, adj)}</T>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
               <Text style={{ fontFamily: F.serif, fontSize: 30, lineHeight: 40, color: C.gold }}>{diffDays(value.start, value.end) + 1}</Text>
-              <Text style={{ color: C.muted, fontSize: 14 }}>{t('days')}</Text>
+              <Text style={{ color: C.muted, fontSize: 14 }}>{lang === 'ar' ? (diffDays(value.start, value.end) + 1 <= 10 ? 'أيام' : 'يومًا') : t('days')}</Text>
             </View>
           </>
         ) : (
@@ -249,5 +248,48 @@ export function CatalogSheet({ onClose, onAdd }) {
         </View>
       </ScrollView>
     </Sheet>
+  );
+}
+
+// ---- Reminders: any number, each at its own time (none by default)
+export function ReminderList({ list, onChange }) {
+  const { t } = useStore();
+  const [editing, setEditing] = useState(null); // reminder id, or 'new'
+  const sorted = [...list].sort((a, b) => (a.time < b.time ? -1 : 1));
+  const cur = editing && editing !== 'new' ? list.find((r) => r.id === editing) : null;
+  const save = (time) => {
+    if (editing === 'new') onChange([...list, { id: 'r_' + Date.now().toString(36), time, on: true }]);
+    else onChange(list.map((r) => (r.id === editing ? { ...r, time } : r)));
+    setEditing(null);
+  };
+  return (
+    <View>
+      {!sorted.length ? <T style={{ color: C.faint, paddingVertical: 12 }}>{t('noReminders')}</T> : null}
+      {sorted.map((r, i) => (
+        <View key={r.id}>
+          {i > 0 ? <Divider /> : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
+            <Pressable onPress={() => setEditing(r.id)} accessibilityRole="button" style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.serif, fontSize: 26, lineHeight: 34, color: r.on ? C.ink : C.faint, fontVariant: ['tabular-nums'] }}>{r.time}</Text>
+              <T style={{ fontSize: 12, color: C.faint }}>{t(+r.time.slice(0, 2) < 12 ? 'morning' : 'evening')} · {t('tapToChange')}</T>
+            </Pressable>
+            <Pressable onPress={() => onChange(list.map((x) => (x.id === r.id ? { ...x, on: !x.on } : x)))} accessibilityRole="switch" accessibilityState={{ checked: r.on }}
+              style={{ width: 50, height: 30, borderRadius: 15, backgroundColor: r.on ? C.accent : C.empty, padding: 3, alignItems: r.on ? 'flex-end' : 'flex-start', direction: 'ltr' }}>
+              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: r.on ? C.onAccent : C.muted }} />
+            </Pressable>
+            <Pressable onPress={() => onChange(list.filter((x) => x.id !== r.id))} accessibilityLabel={t('delete')} hitSlop={8}
+              style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: C.faint, fontSize: 12 }}>✕</Text>
+            </Pressable>
+          </View>
+        </View>
+      ))}
+      <Divider />
+      <Pressable onPress={() => setEditing('new')} accessibilityRole="button" style={{ paddingVertical: 14, alignItems: 'center' }}>
+        <Text style={{ color: C.gold, fontWeight: '600', fontSize: 15 }}>{t('addReminder')}</Text>
+      </Pressable>
+      <TimePickerSheet visible={!!editing} value={cur ? cur.time : list.length ? '18:00' : '05:00'} title={t('reminderTime')}
+        onClose={() => setEditing(null)} onDone={save} />
+    </View>
   );
 }

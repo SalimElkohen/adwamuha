@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H1, H2, Card, Divider, Label, Button, Segmented, RadioList, Toggle, Confirm, Sheet } from '../components/ui';
-import { GoalEditor, CatalogSheet, PeriodPicker } from '../components/editors';
+import { GoalEditor, CatalogSheet, PeriodPicker, ReminderList } from '../components/editors';
 import { diffDays, fmtDate, hijriText } from '../lib/dates';
 import { catalogItem } from '../data/catalog';
 import { goalTitle, goalDetail } from '../i18n';
@@ -32,7 +32,9 @@ export default function Settings() {
 
         <Card style={{ gap: 10 }}>
           <Label style={{ marginBottom: 0 }}>{t('language')}</Label>
-          <Segmented value={lang} onChange={actions.setLang} options={[{ value: 'en', label: 'English' }, { value: 'ar', label: 'العربية' }]} />
+          <View style={{ direction: 'ltr' }}>{/* English left, العربية right, in both languages */}
+            <Segmented value={lang} onChange={actions.setLang} options={[{ value: 'en', label: 'English' }, { value: 'ar', label: 'العربية' }]} />
+          </View>
         </Card>
 
         {sets.map((st, i) => {
@@ -40,7 +42,7 @@ export default function Settings() {
           return (
             <Card key={st.id} style={{ gap: 4 }}>
               <T style={{ fontFamily: F.serif, fontSize: 21, lineHeight: 30, color: C.ink }}>{setName(st, t)}</T>
-              {st.id === 'strong' ? <T style={{ fontSize: 11, color: C.faint, letterSpacing: 0.4 }}>{t('setStrongRef')}</T> : null}
+              <T style={{ fontSize: 11, color: C.faint, letterSpacing: 0.4 }}>{t(st.id === 'strong' ? 'setStrongRef' : 'setWorshipRef')}</T>
               {list.map((g, k) => (
                 <Pressable key={g.id} onPress={() => setEdit(g)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderTopWidth: k ? 1 : 0, borderColor: C.divider, gap: 10 }}>
                   <View style={{ flex: 1 }}>
@@ -78,9 +80,7 @@ export default function Settings() {
 
         <Card style={{ paddingVertical: 6 }}>
           <Label style={{ marginTop: 10, marginBottom: 0 }}>{t('reminders')}</Label>
-          <Toggle label={t('morning')} sub={state.reminders.morningTime} value={state.reminders.morning} onChange={(v) => actions.setReminders({ morning: v })} />
-          <Divider />
-          <Toggle label={t('evening')} sub={state.reminders.eveningTime} value={state.reminders.evening} onChange={(v) => actions.setReminders({ evening: v })} />
+          <ReminderList list={state.reminders.list || []} onChange={(list) => actions.setReminders({ list })} />
         </Card>
 
         <Card style={{ gap: 6 }}>
