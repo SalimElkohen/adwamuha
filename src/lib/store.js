@@ -37,6 +37,19 @@ function migrateReminders(s) {
   return { ...s, reminders: { list } };
 }
 
+// repair: goals left with a future start after the journey was moved earlier
+function fixGoalStarts(s) {
+  const p = s.period || {};
+  const today = todayKey();
+  if (!p.start || p.start > today) return s;
+  let changed = false;
+  const goals = (s.goals || []).map((g) => {
+    if (!g.challengeId && g.start && g.start > today) { changed = true; return { ...g, start: p.start }; }
+    return g;
+  });
+  return changed ? { ...s, goals } : s;
+}
+
 const Ctx = createContext(null);
 
 export function StoreProvider({ children }) {
@@ -50,7 +63,7 @@ export function StoreProvider({ children }) {
         if (!alive) return;
         let s = initialState();
         if (raw) {
-          try { s = migrateReminders(migrateSets({ ...s, ...JSON.parse(raw) })); } catch (e) {}
+          try { s = fixGoalStarts(migrateReminders(migrateSets({ ...s, ...JSON.parse(raw) }))); } catch (e) {}
         }
         setState(s);
       })
@@ -78,7 +91,15 @@ export function StoreProvider({ children }) {
         const period = wasRamadan ? { ...p, end: dayBeforeRamadan(p.start, hijriAdjust) || p.end } : p;
         return { ...s, hijriAdjust, period };
       }),
-    setPeriod: (period) => update((s) => ({ ...s, period })),
+    setPeriod: (period) =>
+      update((s) => {
+        // goals that began with the journey move with its start date
+        const old = s.period && s.period.start;
+        const goals = old && period.start !== old
+          ? s.goals.map((g) => (!g.challengeId && (!g.start || g.start === old) ? { ...g, start: period.start } : g))
+          : s.goals;
+        return { ...s, period, goals };
+      }),
     setReminders: (r) => update((s) => ({ ...s, reminders: { ...s.reminders, ...r } })),
     finishOnboarding: ({ lang, sets, goals, period, hijriAdjust, reminders }) =>
       update((s) => ({ ...s, lang, sets, goals, period, hijriAdjust, reminders: { ...s.reminders, ...reminders }, onboarded: true })),

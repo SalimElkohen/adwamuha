@@ -5,7 +5,7 @@ import { useStore } from '../lib/store';
 import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateField, Sheet, Radio, RadioList, TimePickerSheet } from './ui';
 import { setName as setTitle } from '../lib/sets';
 import { goalDays } from '../lib/stats';
-import { addDays, dayBeforeRamadan, diffDays, fmtDate, hijriText, nextHijri, HIJRI_MONTHS } from '../lib/dates';
+import { addDays, dayBeforeRamadan, diffDays, todayKey, fmtDate, hijriText, nextHijri, HIJRI_MONTHS } from '../lib/dates';
 import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
 import { goalTitle } from '../i18n';
 
@@ -14,6 +14,9 @@ export function PeriodPicker({ value, onChange, hijriAdjust }) {
   const { state, t } = useStore();
   const lang = state.lang;
   const adj = hijriAdjust != null ? hijriAdjust : state.hijriAdjust;
+  // the start can't be earlier than today (a journey already under way keeps its own start)
+  const firstStart = useRef(value.start).current;
+  const minStart = firstStart < todayKey() ? firstStart : todayKey();
   const ramadanEnd = dayBeforeRamadan(value.start, adj);
   const initialMode = !value.end ? 'open' : value.end === ramadanEnd ? 'ramadan' : 'days';
   const [mode, setMode] = useState(value.mode || initialMode);
@@ -55,7 +58,7 @@ export function PeriodPicker({ value, onChange, hijriAdjust }) {
     <View style={{ gap: 16 }}>
       <Card style={{ gap: 6 }}>
         <Label>{t('startDate')}</Label>
-        <DateField value={value.start} hijriAdjust={adj} title={t('startDate')} onChange={(k) => apply({ start: k })} />
+        <DateField value={value.start} min={minStart} hijriAdjust={adj} title={t('startDate')} onChange={(k) => apply({ start: k })} />
       </Card>
 
       <Card style={{ paddingVertical: 6 }}>
