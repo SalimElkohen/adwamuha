@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, tone } from '../theme';
 import { useStore } from '../lib/store';
-import { T, H1, Card, Label, Ring } from '../components/ui';
+import { T, H1, Card, Divider, Label, Ring } from '../components/ui';
 import { addDays, diffDays, hijriOf, HIJRI_MONTHS, monthShort, rangeKeys, todayKey, fromKey } from '../lib/dates';
 import { constancy, dayFraction, excusedFor, onItsDay, weekBlock, goalScore, goalStreak, isActiveOn, mark, goalStart } from '../lib/stats';
 import { catalogItem } from '../data/catalog';
@@ -11,8 +11,17 @@ import { setName } from '../lib/sets';
 import { F } from '../theme';
 
 const CELL = 12, GAP = 2, NAME_W = 118;
-const EXCUSED = 'rgba(201,218,207,0.38)'; // soft grey-green: excused day
-const WEEK_MET = 'rgba(227,194,119,0.6)'; // soft gold: weekly target reached
+// one look per state, so the key is easy to read
+function cellStyle(kind) {
+  const base = { borderRadius: 2 };
+  if (kind === 'done') return { ...base, backgroundColor: C.accent };
+  if (kind === 'missed') return { ...base, backgroundColor: C.miss };
+  if (kind === 'open') return { ...base, backgroundColor: C.empty };
+  if (kind === 'week') return { ...base, borderWidth: 1.5, borderColor: C.accent }; // gold outline: covered by the weekly goal
+  if (kind === 'excused') return { ...base, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(248,243,232,0.55)' }; // dashed: travelling or ill
+  if (kind === 'future') return { ...base, borderWidth: 1, borderColor: C.divider };
+  return base;
+}
 
 // one table for a group of goals (a set or a challenge)
 function Grid({ goals }) {
@@ -87,9 +96,9 @@ function Grid({ goals }) {
                 // weekly goals: the other days of a week whose target is met are shaded; otherwise left almost blank (not missed)
                 const wk = active && !m && !exc && !fut && r.goal.freq === 'weekly';
                 const met = wk && (() => { const bl = weekBlock(r.goal, state, k); return bl.target > 0 && bl.done >= bl.target; })();
-                const bg = !active ? 'transparent' : m === 'd' ? C.accent : exc ? EXCUSED : m === 'x' ? C.miss : fut ? 'transparent' : wk ? (met ? WEEK_MET : 'rgba(248,243,232,0.04)') : C.empty;
+                const kind = !active ? 'none' : m === 'd' ? 'done' : exc ? 'excused' : m === 'x' ? 'missed' : fut ? 'future' : wk ? (met ? 'week' : 'none') : 'open';
                 return (
-                  <View key={k} style={{ width: CELL, height: 22, marginRight: GAP, borderRadius: 2, backgroundColor: bg, borderWidth: active && fut ? 1 : 0, borderColor: C.line }} />
+                  <View key={k} style={[{ width: CELL, height: 22, marginRight: GAP }, cellStyle(kind)]} />
                 );
               })}
             </View>
@@ -177,18 +186,27 @@ export default function Progress() {
           <Grid goals={gr.goals} />
         </Card>
       ))}
-      <View style={{ paddingHorizontal: 4, gap: 6 }}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-          {[[C.accent, t('legendDone')], [WEEK_MET, t('legendWeekMet')], [C.miss, t('legendMissed')], [EXCUSED, t('legendExcused')], [C.empty, t('legendOpen')]].map(([c, l]) => (
-            <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: c }} />
-              <Text style={{ fontSize: 12, color: C.muted }}>{l}</Text>
-            </View>
-          ))}
-          <Text style={{ fontSize: 12, color: C.muted }}><Text style={{ color: C.gold }}>▼</Text> {t('legendToday')}</Text>
+      <Card style={{ gap: 10 }}>
+        <Label style={{ marginBottom: 0 }}>{t('legendTitle')}</Label>
+        {[['done', 'legendDone'], ['missed', 'legendMissed'], ['open', 'legendOpen'], ['week', 'legendWeekMet'], ['excused', 'legendExcused']].map(([k, l]) => (
+          <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={[{ width: CELL, height: 22 }, cellStyle(k)]} />
+            <T style={{ flex: 1, fontSize: 13, lineHeight: 18 }}>{t(l)}</T>
+          </View>
+        ))}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ width: CELL, height: 22, borderRadius: 3, backgroundColor: C.empty, overflow: 'hidden', justifyContent: 'flex-end' }}>
+            <View style={{ height: 13, backgroundColor: C.accent, opacity: 0.85 }} />
+          </View>
+          <T style={{ flex: 1, fontSize: 13, lineHeight: 18 }}>{t('legendBars')}</T>
         </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Text style={{ width: CELL, textAlign: 'center', fontSize: 11, color: C.gold }}>▼</Text>
+          <T style={{ flex: 1, fontSize: 13, lineHeight: 18 }}>{t('legendToday')}</T>
+        </View>
+        <Divider />
         <T style={{ fontSize: 12, color: C.faint }}>{t('gridHint')}</T>
-      </View>
+      </Card>
     </ScrollView>
   );
 }
