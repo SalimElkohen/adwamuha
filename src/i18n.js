@@ -127,7 +127,7 @@ const en = {
   legendMissed: 'Not done',
   legendOpen: 'Not checked',
   legendToday: 'Today',
-  gridHint: 'Tap a square to change it.',
+  gridHint: 'To correct a past day, use ‹ on Today.',
   // challenges
   challengesHint: 'Seasonal challenges run alongside your daily goals for a set time.',
   join: 'Join',
@@ -302,7 +302,7 @@ const ar = {
   legendMissed: 'لم يُنجز',
   legendOpen: 'غير مسجل',
   legendToday: 'اليوم',
-  gridHint: 'اضغط على مربع لتغييره.',
+  gridHint: 'لتصحيح يوم سابق، استعمل › في صفحة اليوم.',
   challengesHint: 'تحديات موسمية تسير مع أهدافك اليومية لمدة محددة.',
   join: 'انضم',
   joined: 'منضم',

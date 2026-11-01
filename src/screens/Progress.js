@@ -89,8 +89,7 @@ function Grid({ goals }) {
                 const met = wk && (() => { const bl = weekBlock(r.goal, state, k); return bl.target > 0 && bl.done >= bl.target; })();
                 const bg = !active ? 'transparent' : m === 'd' ? C.accent : exc ? EXCUSED : m === 'x' ? C.miss : fut ? 'transparent' : wk ? (met ? WEEK_MET : 'rgba(248,243,232,0.04)') : C.empty;
                 return (
-                  <Pressable key={k} disabled={!active || fut} onPress={() => actions.cycleMark(r.goal.id, k)}
-                    style={{ width: CELL, height: 22, marginRight: GAP, borderRadius: 2, backgroundColor: bg, borderWidth: active && fut ? 1 : 0, borderColor: C.line }} />
+                  <View key={k} style={{ width: CELL, height: 22, marginRight: GAP, borderRadius: 2, backgroundColor: bg, borderWidth: active && fut ? 1 : 0, borderColor: C.line }} />
                 );
               })}
             </View>
