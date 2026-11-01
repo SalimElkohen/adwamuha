@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { addDays, todayKey } from './dates';
+import { addDays, dayBeforeRamadan, todayKey } from './dates';
 import { catalogItem, goalFromCatalog } from '../data/catalog';
 import { goalScore } from './stats';
 import { makeT } from '../i18n';
@@ -70,7 +70,14 @@ export function StoreProvider({ children }) {
 
   const actions = useMemo(() => ({
     setLang: (lang) => update((s) => ({ ...s, lang })),
-    setHijriAdjust: (hijriAdjust) => update((s) => ({ ...s, hijriAdjust })),
+    setHijriAdjust: (hijriAdjust) =>
+      update((s) => {
+        // a journey that ends the day before Ramadan follows the calendar setting
+        const p = s.period || {};
+        const wasRamadan = p.end && p.end === dayBeforeRamadan(p.start, s.hijriAdjust);
+        const period = wasRamadan ? { ...p, end: dayBeforeRamadan(p.start, hijriAdjust) || p.end } : p;
+        return { ...s, hijriAdjust, period };
+      }),
     setPeriod: (period) => update((s) => ({ ...s, period })),
     setReminders: (r) => update((s) => ({ ...s, reminders: { ...s.reminders, ...r } })),
     finishOnboarding: ({ lang, sets, goals, period, hijriAdjust, reminders }) =>
@@ -81,6 +88,7 @@ export function StoreProvider({ children }) {
         if (kind) excused[key] = kind; else delete excused[key];
         return { ...s, excused };
       }),
+    markIntro: (k) => update((s) => ({ ...s, lastIntro: k })),
     dismiss: (key) => update((s) => ({ ...s, seen: { ...(s.seen || {}), [key]: true } })),
     snoozeGrow: (goalId, until) => update((s) => ({ ...s, growSnooze: { ...(s.growSnooze || {}), [goalId]: until } })),
     renameSet: (id, name) => update((s) => ({ ...s, sets: s.sets.map((x) => (x.id === id ? { ...x, name } : x)) })),

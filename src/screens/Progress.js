@@ -4,14 +4,15 @@ import { C, tone } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H1, Card, Label, Ring } from '../components/ui';
 import { addDays, diffDays, hijriOf, HIJRI_MONTHS, monthShort, rangeKeys, todayKey, fromKey } from '../lib/dates';
-import { constancy, dayFraction, excusedFor, onItsDay, goalScore, goalStreak, isActiveOn, mark, goalStart } from '../lib/stats';
+import { constancy, dayFraction, excusedFor, onItsDay, weekBlock, goalScore, goalStreak, isActiveOn, mark, goalStart } from '../lib/stats';
 import { catalogItem } from '../data/catalog';
-import { goalTitle } from '../i18n';
+import { goalShort, goalTitle } from '../i18n';
 import { setName } from '../lib/sets';
 import { F } from '../theme';
 
 const CELL = 12, GAP = 2, NAME_W = 118;
 const EXCUSED = 'rgba(201,218,207,0.38)'; // soft grey-green: excused day
+const WEEK_MET = 'rgba(227,194,119,0.6)'; // soft gold: weekly target reached
 
 // one table for a group of goals (a set or a challenge)
 function Grid({ goals }) {
@@ -55,14 +56,14 @@ function Grid({ goals }) {
     </View>
   );
 
-  const rows = goals.map((g) => ({ key: g.id, name: goalTitle(g, lang, catalogItem), goal: g }));
+  const rows = goals.map((g) => ({ key: g.id, name: goalShort(g, lang, catalogItem), goal: g }));
 
   return (
     <View style={{ flexDirection: 'row', direction: 'ltr' }}>
       <View style={{ width: NAME_W, paddingTop: 16 * 2 + 12 }}>
         {rows.map((r) => (
           <View key={r.key} style={{ height: 22, marginBottom: GAP, justifyContent: 'center' }}>
-            <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '600', color: C.ink, textAlign: rtl ? 'right' : 'left', paddingRight: 8 }}>{r.name}</Text>
+            <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '600', color: C.ink, textAlign: rtl ? 'right' : 'left', writingDirection: rtl ? 'rtl' : 'ltr', paddingRight: 8 }}>{r.name}</Text>
           </View>
         ))}
         <View style={{ height: 22, marginTop: 6, justifyContent: 'center' }}>
@@ -83,7 +84,10 @@ function Grid({ goals }) {
                 const m = mark(state, r.goal.id, k);
                 const fut = k > today;
                 const exc = active && m !== 'd' && excusedFor(state, r.goal, k);
-                const bg = !active ? 'transparent' : m === 'd' ? C.accent : exc ? EXCUSED : m === 'x' ? C.miss : fut ? 'transparent' : C.empty;
+                // weekly goals: the other days of a week whose target is met are shaded; otherwise left almost blank (not missed)
+                const wk = active && !m && !exc && !fut && r.goal.freq === 'weekly';
+                const met = wk && (() => { const bl = weekBlock(r.goal, state, k); return bl.target > 0 && bl.done >= bl.target; })();
+                const bg = !active ? 'transparent' : m === 'd' ? C.accent : exc ? EXCUSED : m === 'x' ? C.miss : fut ? 'transparent' : wk ? (met ? WEEK_MET : 'rgba(248,243,232,0.04)') : C.empty;
                 return (
                   <Pressable key={k} disabled={!active || fut} onPress={() => actions.cycleMark(r.goal.id, k)}
                     style={{ width: CELL, height: 22, marginRight: GAP, borderRadius: 2, backgroundColor: bg, borderWidth: active && fut ? 1 : 0, borderColor: C.line }} />
@@ -108,7 +112,7 @@ function Grid({ goals }) {
 }
 
 export default function Progress() {
-  const { state, t } = useStore();
+  const { state, t, rtl } = useStore();
   const lang = state.lang;
   const today = todayKey();
   const p = state.period;
@@ -157,7 +161,7 @@ export default function Progress() {
                 return (
                   <View key={g.id} style={{ width: '33.33%', alignItems: 'center', gap: 4, paddingHorizontal: 4 }}>
                     <Ring size={72} stroke={5} pct={s.pct || 0} color={tone(s.pct)} center={s.pct == null ? '—' : Math.round(s.pct) + '%'} />
-                    <Text numberOfLines={2} style={{ fontSize: 12, fontWeight: '600', color: C.ink, textAlign: 'center' }}>{goalTitle(g, lang, catalogItem)}</Text>
+                    <Text numberOfLines={2} style={{ fontSize: 12, fontWeight: '600', color: C.ink, textAlign: 'center', writingDirection: rtl ? 'rtl' : 'ltr' }}>{goalShort(g, lang, catalogItem)}</Text>
                     <Text style={{ fontSize: 11, color: k > 0 ? C.gold : C.faint }}>{k > 0 ? '✦ ' + k : s.done + '/' + s.expected}</Text>
                   </View>
                 );
@@ -176,7 +180,7 @@ export default function Progress() {
       ))}
       <View style={{ paddingHorizontal: 4, gap: 6 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-          {[[C.accent, t('legendDone')], [C.miss, t('legendMissed')], [EXCUSED, t('legendExcused')], [C.empty, t('legendOpen')]].map(([c, l]) => (
+          {[[C.accent, t('legendDone')], [WEEK_MET, t('legendWeekMet')], [C.miss, t('legendMissed')], [EXCUSED, t('legendExcused')], [C.empty, t('legendOpen')]].map(([c, l]) => (
             <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: c }} />
               <Text style={{ fontSize: 12, color: C.muted }}>{l}</Text>

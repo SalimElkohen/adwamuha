@@ -19,7 +19,7 @@ export const BUILT_IN_CHALLENGES = [
     id: 'rajab',
     upcoming: true,
     en: { title: 'Rajab, a sacred month', desc: '“Rajab is the month of sowing, Shaʿbān of watering, and Ramadan of harvest.” (a saying of the salaf)\nA sacred month: “So do not wrong yourselves in them.” (At-Tawba 9:36)' },
-    ar: { title: 'رجب، شهر حرام', desc: '«رجب شهر الزرع، وشعبان شهر السقي، ورمضان شهر الحصاد» (من أقوال السلف)\nشهر حرام: ﴿فَلَا تَظْلِمُوا فِيهِنَّ أَنفُسَكُمْ﴾ (التوبة: ٣٦)' },
+    ar: { title: 'رجب، شهر حرام', desc: '«رجب شهر الزرع، وشعبان شهر السقي، ورمضان شهر الحصاد» (من أقوال السلف)\nشهر حرام: ﴿فَلَا تَظْلِمُوا فِيهِنَّ أَنفُسَكُمْ﴾ (التوبة: 36)' },
     period: { type: 'hijri', month: 7, from: 1, to: 29 },
     goals: [],
   },

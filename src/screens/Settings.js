@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H1, H2, Card, Divider, Label, Button, Segmented, RadioList, Toggle, Confirm, Sheet } from '../components/ui';
@@ -24,6 +24,11 @@ export default function Settings() {
   const setOf = (g) => (sets.some((x) => x.id === g.setId) ? g.setId : sets[0].id);
   const p = state.period;
   const chevron = rtl ? '‹' : '›';
+  // export: the whole journey as text, shared to Notes, Files, email or a message
+  const exportData = () => {
+    const data = JSON.stringify({ app: 'Adwamuha', exported: new Date().toISOString(), state }, null, 1);
+    Share.share({ title: 'Adwamuha', message: data }).catch(() => {});
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -56,7 +61,7 @@ export default function Settings() {
                 <Button small kind="secondary" title={t('addFromList')} onPress={() => setAdding(st.id)} style={{ flex: 1 }} />
                 <Button small kind="secondary" title={t('addOwn')} onPress={() => setNewIn(st.id)} style={{ flex: 1 }} />
               </View>
-              {sets.length > 1 ? (
+              {sets.length > 1 && st.id === 'strong' ? (
                 <Pressable onPress={() => setDelSet(st)} accessibilityRole="button" style={{ alignSelf: 'center', paddingTop: 12, paddingBottom: 2 }}>
                   <Text style={{ color: C.miss, fontSize: 13 }}>{t('deleteSet')}</Text>
                 </Pressable>
@@ -92,7 +97,14 @@ export default function Settings() {
           <T style={{ fontSize: 12, color: C.faint, marginTop: 4 }}>Adwamuhā 1.0</T>
         </Card>
 
-        <Button kind="danger" title={t('resetAll')} onPress={() => setReset(true)} />
+        <View style={{ alignItems: 'center', gap: 14, paddingTop: 4 }}>
+          <Pressable onPress={exportData} accessibilityRole="button" style={{ paddingVertical: 6 }}>
+            <Text style={{ color: C.gold, fontSize: 14, fontWeight: '600' }}>{t('exportData')}</Text>
+          </Pressable>
+          <Pressable onPress={() => setReset(true)} accessibilityRole="button" style={{ paddingVertical: 6 }}>
+            <Text style={{ color: C.miss, fontSize: 13 }}>{t('resetAll')}</Text>
+          </Pressable>
+        </View>
       </ScrollView>
 
       {newIn ? (

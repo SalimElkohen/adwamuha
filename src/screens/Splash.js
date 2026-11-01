@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Pattern, Rect, Stop } from 'react-native-svg';
 import { useStore } from '../lib/store';
+import { todayKey } from '../lib/dates';
 import Logo from '../components/Logo';
 import { ZelligeTile } from '../components/Lattice';
 import { WELCOME } from '../data/hadith';
@@ -109,6 +110,9 @@ export default function Splash({ onDone }) {
   const morph = useRef(new Animated.Value(0)).current; // the word becomes the logo
   const hint = useRef(new Animated.Value(0)).current; // "tap to continue"
   const [canTap, setCanTap] = useState(false);
+  const { actions } = useStore();
+  // the full opening plays on the first launch of the day; later launches show the logo briefly
+  const [quick] = useState(() => state.lastIntro === todayKey());
   const [t, setT] = useState(0); // time into the opening sequence, ms
   const lay = useRef({}).current; // layout of the hadith pieces, to know where the word sits
   const [wordBox, setWordBox] = useState(null);
@@ -121,6 +125,15 @@ export default function Splash({ onDone }) {
   };
 
   useEffect(() => {
+    if (!quick) return undefined;
+    setT(INTRO.total); fade.setValue(1); focus.setValue(1); zoom.setValue(1); morph.setValue(1);
+    const id = setTimeout(onDone, 1500);
+    return () => clearTimeout(id);
+  }, [quick]);
+
+  useEffect(() => {
+    if (quick) return undefined;
+    actions.markIntro(todayKey());
     let raf, alive = true;
     const io = Easing.inOut(Easing.cubic);
     const run = (reduce) => {
@@ -154,6 +167,7 @@ export default function Splash({ onDone }) {
     const id = setTimeout(() => {
       if (!alive) return;
       setCanTap(true);
+      if (quick) return;
       Animated.timing(hint, { toValue: 1, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     }, TAP_AT);
     return () => { alive = false; cancelAnimationFrame(raf); clearTimeout(id); };
@@ -232,7 +246,7 @@ export default function Splash({ onDone }) {
   }
 
   return (
-    <Pressable onPress={canTap ? onDone : undefined} disabled={!canTap} accessibilityLabel={tr('tapToContinue')} style={{ flex: 1, backgroundColor: M.ivory }}>
+    <Pressable onPress={onDone} accessibilityLabel={tr('tapToContinue')} style={{ flex: 1, backgroundColor: M.ivory }}>
       <View style={{ flex: 1 }} onLayout={(e) => setSize(e.nativeEvent.layout)}>{body}</View>
     </Pressable>
   );

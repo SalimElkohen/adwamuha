@@ -166,31 +166,6 @@ export default function Today() {
         )
       ) : null}
 
-      {season && showCard('season') ? (
-        <Callout onClose={() => actions.dismiss(season.key)}
-          title={t(season.month === 7 ? 'rajabTitle' : season.month === 8 ? 'shabanTitle' : 'ramadanTitle')}
-          quote={season.month === 7 ? '﴿مِنْهَا أَرْبَعَةٌ حُرُمٌ﴾' : season.month === 8 ? '«وما رأيتُه أكثرَ صيامًا منه في شعبان»' : null}
-          refText={season.month === 7 ? t('rajabRef') : season.month === 8 ? t('shabanRef') : null}
-          body={[season.month === 7 ? t('rajabBody') : null, season.month !== 7 ? t('seasonSummary', { list: setScores, best: t('nDays', { n: bestStreak(state, today) }) }) : null].filter(Boolean).join(' ')} />
-      ) : null}
-      {restart && showCard('restart') ? (
-        <Callout onClose={() => actions.dismiss(restart.key)} title={t('restartTitle')} quote={restartH.ar} refText={lang === 'ar' ? restartH.refAr : restartH.refEn}
-          body={t('restartBody', { n: t('nDays', { n: restart.best }) })} />
-      ) : null}
-      {miles.filter((mc) => showCard(mc.key)).map((mc) => (
-        <Callout key={mc.key} onClose={() => actions.dismiss(mc.key)} title={'✦ ' + t('milestoneTitle', { n: t('nDays', { n: mc.n }), goal: goalTitle(mc.goal, lang, catalogItem) })}
-          quote={'«' + WELCOME.ar + '»'} refText={lang === 'ar' ? WELCOME.refAr : WELCOME.refEn} />
-      ))}
-      {grow && showCard('grow') ? (
-        <Callout title={t('growTitle')} body={t('growBody', { goal: goalTitle(grow.goal, lang, catalogItem) })}>
-          <Text style={{ fontFamily: F.serif, fontSize: 22, color: C.gold, textAlign: 'center', paddingVertical: 4 }}>{t('growStep', { from: grow.from, to: grow.to, unit: growUnit })}</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Button small kind="secondary" title={t('growLater')} onPress={() => actions.snoozeGrow(grow.goal.id, addDays(today, 30))} style={{ flex: 1 }} />
-            <Button small title={t('growYes')} onPress={() => { actions.updateGoal(grow.goal.id, { target: grow.to }); actions.snoozeGrow(grow.goal.id, addDays(today, 30)); }} style={{ flex: 1 }} />
-          </View>
-        </Callout>
-      ) : null}
-
       {ended.map((c) => {
         const gs = state.goals.filter((g) => c.goalIds.includes(g.id) || (c.linkedIds || []).includes(g.id)).map((g) => ({ ...g, start: c.start, end: c.end, challengeId: c.id }));
         let d = 0, e = 0;
@@ -261,6 +236,32 @@ export default function Today() {
         <T center style={{ fontSize: 12, color: C.faint, paddingTop: 10, paddingBottom: day !== today ? 10 : 4 }}>{t('tapDone')}</T>
         {day !== today ? <Button small kind="secondary" title={t('backToToday')} onPress={() => setDay(today)} style={{ marginBottom: 6 }} /> : null}
       </Card>
+
+      {/* motivation cards come after the goals, so the checklist stays at the top */}
+      {season && showCard('season') ? (
+        <Callout onClose={() => actions.dismiss(season.key)}
+          title={t(season.month === 7 ? 'rajabTitle' : season.month === 8 ? 'shabanTitle' : 'ramadanTitle')}
+          quote={season.month === 7 ? '﴿مِنْهَا أَرْبَعَةٌ حُرُمٌ﴾' : season.month === 8 ? '«وما رأيتُه أكثرَ صيامًا منه في شعبان»' : null}
+          refText={season.month === 7 ? t('rajabRef') : season.month === 8 ? t('shabanRef') : null}
+          body={[season.month === 7 ? t('rajabBody') : null, season.month !== 7 ? t('seasonSummary', { list: setScores, best: t('nDays', { n: bestStreak(state, today) }) }) : null].filter(Boolean).join(' ')} />
+      ) : null}
+      {restart && showCard('restart') ? (
+        <Callout onClose={() => actions.dismiss(restart.key)} title={t('restartTitle')} quote={restartH.ar} refText={lang === 'ar' ? restartH.refAr : restartH.refEn}
+          body={t('restartBody', { n: t('nDays', { n: restart.best }) })} />
+      ) : null}
+      {miles.filter((mc) => showCard(mc.key)).map((mc) => (
+        <Callout key={mc.key} onClose={() => actions.dismiss(mc.key)} title={'✦ ' + t('milestoneTitle', { n: t('nDays', { n: mc.n }), goal: goalTitle(mc.goal, lang, catalogItem) })}
+          quote={'«' + WELCOME.ar + '»'} refText={lang === 'ar' ? WELCOME.refAr : WELCOME.refEn} />
+      ))}
+      {grow && showCard('grow') ? (
+        <Callout title={t('growTitle')} body={t('growBody', { goal: goalTitle(grow.goal, lang, catalogItem) })}>
+          <Text style={{ fontFamily: F.serif, fontSize: 22, color: C.gold, textAlign: 'center', paddingVertical: 4 }}>{t('growStep', { from: grow.from, to: grow.to, unit: growUnit })}</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button small kind="secondary" title={t('growLater')} onPress={() => actions.snoozeGrow(grow.goal.id, addDays(today, 30))} style={{ flex: 1 }} />
+            <Button small title={t('growYes')} onPress={() => { actions.updateGoal(grow.goal.id, { target: grow.to }); actions.snoozeGrow(grow.goal.id, addDays(today, 30)); }} style={{ flex: 1 }} />
+          </View>
+        </Callout>
+      ) : null}
 
       <View style={{ alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 14 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

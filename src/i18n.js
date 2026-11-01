@@ -28,6 +28,8 @@ const en = {
   excusedLine: 'Excused',
   undo: 'Undo',
   legendExcused: 'Excused',
+  legendWeekMet: 'Weekly goal met',
+  exportData: 'Export my data',
   milestoneTitle: '{n} · {goal}',
   restartTitle: 'Begin again today',
   restartBody: 'Your best streak: {n}. You can beat it.',
@@ -199,34 +201,36 @@ const ar = {
   excuseAllPast: 'مسافر أو مريض في هذا اليوم',
   excusedAllTitle: 'مسافر أو مريض',
   excusedHadith: '«إذا مَرِضَ العَبدُ أو سافَرَ كُتِبَ له مِثلُ ما كان يَعمَلُ مُقيمًا صَحيحًا»',
-  excusedRef: 'صحيح البخاري ٢٩٩٦',
+  excusedRef: 'صحيح البخاري 2996',
   excusedBody: 'سلسلتك محفوظة، ولا يُحتسب هذا اليوم عليك.',
   excusedLine: 'معذور',
   undo: 'تراجع',
   legendExcused: 'معذور',
+  legendWeekMet: 'هدف الأسبوع محقق',
+  exportData: 'تصدير بياناتي',
   milestoneTitle: '{n} · {goal}',
   restartTitle: 'ابدأ من جديد اليوم',
   restartBody: 'أفضل سلسلة لك: {n}. يمكنك أن تتجاوزها.',
   rajabTitle: 'غدًا يبدأ شهر رجب',
   rajabBody: 'أحد الأشهر الحرم الأربعة.',
   rajabQuote: '﴿مِنْهَا أَرْبَعَةٌ حُرُمٌ﴾',
-  rajabRef: 'التوبة: ٣٦',
+  rajabRef: 'التوبة: 36',
   shabanTitle: 'غدًا يبدأ شهر شعبان',
   shabanQuote: '«وما رأيتُه أكثرَ صيامًا منه في شعبان»',
-  shabanRef: 'صحيح البخاري ١٩٦٩',
+  shabanRef: 'صحيح البخاري 1969',
   ramadanTitle: 'غدًا يبدأ رمضان · رمضان مبارك',
   seasonSummary: 'مداومتك حتى الآن: {list}. أفضل سلسلة: {best}.',
   growTitle: 'مستعد لزيادة قليلة؟',
-  growBody: 'داومت على {goal} بنسبة ٩٠٪ أو أكثر لمدة ٣٠ يومًا.',
+  growBody: 'داومت على {goal} بنسبة 90% أو أكثر لمدة 30 يومًا.',
   growStep: '{from} ← {to} {unit}',
   growYes: 'زِد',
   growLater: 'ليس الآن',
   setWorship: 'وِردي',
   setWorshipHadith: '«وما يَزالُ عبدي يتقرَّبُ إليَّ بالنَّوافلِ حتى أُحِبَّه»',
-  setWorshipRef: 'صحيح البخاري ٦٥٠٢',
+  setWorshipRef: 'صحيح البخاري 6502',
   setStrong: 'نمط حياتي',
   setStrongHadith: '«المؤمنُ القويُّ خيرٌ وأحبُّ إلى اللهِ من المؤمنِ الضعيفِ، وفي كلٍّ خيرٌ»',
-  setStrongRef: 'صحيح مسلم ٢٦٦٤',
+  setStrongRef: 'صحيح مسلم 2664',
   setLabel: 'المجموعة {n}',
   setName: 'اسم المجموعة',
   setOff: 'اختر هدفًا لتفعيل هذه المجموعة.',
@@ -284,8 +288,8 @@ const ar = {
   challengeTag: 'تحدٍّ',
   challengeDone: 'انتهى {title}',
   challengeDoneBody: 'مداومتك: {pct}. هل تريد الاستمرار؟',
-  extend7: '+٧ أيام',
-  extend30: '+٣٠ يومًا',
+  extend7: '+7 أيام',
+  extend30: '+30 يومًا',
   finishChallenge: 'إنهاء',
   beforeStart: 'تبدأ رحلتك يوم {date}.',
   overall: 'الإجمالي',
@@ -293,7 +297,7 @@ const ar = {
   daysLeft: 'بقي {n} يومًا',
   openJourney: 'مفتوحة',
   allDays: 'كل الأيام',
-  allDaily: 'كل اليومية',
+  allDaily: 'مجموع اليوم',
   legendDone: 'أُنجز',
   legendMissed: 'لم يُنجز',
   legendOpen: 'غير مسجل',
@@ -376,6 +380,13 @@ export function goalTitle(goal, lang, catalogItem) {
   }
   if (goal.title) return goal.title[lang] || goal.title.en || goal.title.ar;
   return goal.name || '';
+}
+
+// short name for small places (tiles, rings, tables)
+export function goalShort(goal, lang, catalogItem) {
+  const c = goal.catalogId ? catalogItem(goal.catalogId) : null;
+  if (c && !goal.name) return (lang === 'ar' ? c.arShort : c.enShort) || (lang === 'ar' ? c.ar : c.en);
+  return goalTitle(goal, lang, catalogItem);
 }
 
 export function goalDetail(goal, lang, catalogItem, t) {

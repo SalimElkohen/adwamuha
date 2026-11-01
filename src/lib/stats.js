@@ -52,7 +52,8 @@ export function weekBlock(goal, state, key) {
     const endG = goalEnd(goal, state);
     if (endG && be > endG) be = endG;
     const sched = rangeKeys(bs, be).filter((k) => wd.includes(weekday(k)));
-    const target = sched.some((k) => !excusedFor(state, goal, k)) ? 1 : 0;
+    const partialFirst = bs > mondayOf(key); // the goal started mid-week: that week is not required
+    const target = !partialFirst && sched.some((k) => !excusedFor(state, goal, k)) ? 1 : 0;
     const done = sched.some((k) => mark(state, goal.id, k) === 'd') ? 1 : 0;
     return { start: bs, end: be, target, done, index: Math.floor(diffDays(mondayOf(a), bs) / 7), sched };
   }
@@ -91,7 +92,9 @@ export function goalScore(goal, state, today) {
   }
   let done = 0, days = 0;
   rangeKeys(a, b).forEach((k) => {
-    const d = mark(state, goal.id, k) === 'd';
+    const mk = mark(state, goal.id, k);
+    const d = mk === 'd';
+    if (k === today && !mk) return; // today only counts once ticked or marked not done
     if (excusedFor(state, goal, k) && !d) return; // an excused day does not count against
     days++;
     if (d) done++;
