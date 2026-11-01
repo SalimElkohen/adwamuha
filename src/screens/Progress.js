@@ -96,7 +96,7 @@ function Grid({ goals }) {
                 // weekly goals: the other days of a week whose target is met are shaded; otherwise left almost blank (not missed)
                 const wk = active && !m && !exc && !fut && r.goal.freq === 'weekly';
                 const met = wk && (() => { const bl = weekBlock(r.goal, state, k); return bl.target > 0 && bl.done >= bl.target; })();
-                const kind = !active ? 'none' : m === 'd' ? 'done' : exc ? 'excused' : m === 'x' ? 'missed' : fut ? 'future' : wk ? (met ? 'week' : 'none') : 'open';
+                const kind = !active ? 'none' : m === 'd' ? 'done' : exc ? 'excused' : m === 'x' ? 'missed' : fut ? 'future' : wk ? (met ? 'done' : 'none') : 'open'; // a weekly goal whose week is reached counts as achieved every day
                 return (
                   <View key={k} style={[{ width: CELL, height: 22, marginRight: GAP }, cellStyle(kind)]} />
                 );
@@ -188,7 +188,7 @@ export default function Progress() {
       ))}
       <Card style={{ gap: 10 }}>
         <Label style={{ marginBottom: 0 }}>{t('legendTitle')}</Label>
-        {[['done', 'legendDone'], ['missed', 'legendMissed'], ['open', 'legendOpen'], ['week', 'legendWeekMet'], ['excused', 'legendExcused']].map(([k, l]) => (
+        {[['done', 'legendDone'], ['missed', 'legendMissed'], ['open', 'legendOpen'], ['excused', 'legendExcused']].map(([k, l]) => (
           <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View style={[{ width: CELL, height: 22 }, cellStyle(k)]} />
             <T style={{ flex: 1, fontSize: 13, lineHeight: 18 }}>{t(l)}</T>
