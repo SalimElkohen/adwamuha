@@ -1,3 +1,4 @@
+import { fillAmount } from './data/catalog';
 const en = {
   appName: 'Adwamuhā',
   tapToContinue: 'Tap to continue',
@@ -376,7 +377,7 @@ export function makeT(lang) {
 export function goalTitle(goal, lang, catalogItem) {
   if (goal.catalogId) {
     const c = catalogItem(goal.catalogId);
-    if (c) return lang === 'ar' ? c.ar : c.en;
+    if (c) return fillAmount(lang === 'ar' ? c.ar : c.en, goal.target || c.target);
   }
   if (goal.title) return goal.title[lang] || goal.title.en || goal.title.ar;
   return goal.name || '';
@@ -385,7 +386,7 @@ export function goalTitle(goal, lang, catalogItem) {
 // short name for small places (tiles, rings, tables)
 export function goalShort(goal, lang, catalogItem) {
   const c = goal.catalogId ? catalogItem(goal.catalogId) : null;
-  if (c && !goal.name) return (lang === 'ar' ? c.arShort : c.enShort) || (lang === 'ar' ? c.ar : c.en);
+  if (c && !goal.name) return fillAmount((lang === 'ar' ? c.arShort : c.enShort) || (lang === 'ar' ? c.ar : c.en), goal.target || c.target);
   return goalTitle(goal, lang, catalogItem);
 }
 
@@ -395,7 +396,7 @@ export function goalDetail(goal, lang, catalogItem, t) {
   const c = goal.catalogId ? catalogItem(goal.catalogId) : null;
   if (c && !unit) unit = lang === 'ar' ? c.unitAr : c.unitEn;
   if (c && c.days && !goal.unit && !target) return t('monOrThu');
-  if (target || unit) parts.push([target, unit].filter(Boolean).join(' ')); // a number, a detail, or both
+  if ((target || unit) && !(c && c.amountInName)) parts.push([target, unit].filter(Boolean).join(' ')); // a number, a detail, or both
   // "10 pages a week": the unit already names the week, unless the user changed how often
   if (c && c.weekInUnit && target && goal.freq === 'weekly' && (goal.perWeek || 1) === 1 && (!goal.unit || goal.unit === c.unitEn || goal.unit === c.unitAr)) return parts.join(' · ');
   parts.push(goal.freq === 'weekly' ? t('perWeek', { n: goal.perWeek || 1 }) : t('daily'));

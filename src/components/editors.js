@@ -6,7 +6,7 @@ import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, D
 import { setName as setTitle } from '../lib/sets';
 import { goalDays } from '../lib/stats';
 import { addDays, dayBeforeRamadan, diffDays, todayKey, fmtDate, hijriText, nextHijri, HIJRI_MONTHS } from '../lib/dates';
-import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
+import { CATALOG, catalogItem, fillAmount, goalFromCatalog } from '../data/catalog';
 import { goalTitle } from '../i18n';
 
 // ---- Journey period: start + (no end | number of days | until Ramadan | date | Hijri date)
@@ -199,7 +199,7 @@ export function CatalogRows({ items, selected, onToggle }) {
         <Pressable onPress={() => onToggle(c.id)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 13 }}>
           <View style={{ flex: 1 }}>
-            <T style={{ fontWeight: '600', color: on ? C.ink : C.muted }}>{lang === 'ar' ? c.ar : c.en}</T>
+            <T style={{ fontWeight: '600', color: on ? C.ink : C.muted }}>{fillAmount(lang === 'ar' ? c.ar : c.en, c.target)}</T>
             <T style={{ fontSize: 13, color: C.faint, marginTop: 1 }}>{sub}</T>
           </View>
           <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: on ? C.accent : C.line, backgroundColor: on ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
@@ -242,7 +242,7 @@ export function catalogDetail(c, lang, t) {
   const unit = lang === 'ar' ? c.unitAr : c.unitEn;
   // keep number groups like 33 · 33 · 33 + 1 in reading order inside Arabic text
   const tg = c.target && lang === 'ar' && /[·+]/.test(c.target) ? '\u2066' + c.target + '\u2069' : c.target;
-  return [tg ? tg + (unit ? ' ' + unit : '') : null, c.days ? t('monOrThu') : c.weekInUnit ? null : c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
+  return [tg && !c.amountInName ? tg + (unit ? ' ' + unit : '') : null, c.days ? t('monOrThu') : c.weekInUnit ? null : c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
 }
 
 export function CatalogTiles({ items, selected, onToggle }) {
@@ -250,8 +250,8 @@ export function CatalogTiles({ items, selected, onToggle }) {
   const lang = state.lang, rtl = lang === 'ar';
   return items.map((c) => (
     <GoalTile key={c.id} rtl={rtl} on={selected.includes(c.id)} onPress={() => onToggle(c.id)}
-      title={rtl ? c.arShort || c.ar : c.enShort || c.en}
-      second={rtl ? null : c.arShort || c.ar}
+      title={fillAmount(rtl ? c.arShort || c.ar : c.enShort || c.en, c.target)}
+      second={rtl ? null : fillAmount(c.arShort || c.ar, c.target)}
       detail={catalogDetail(c, lang, t)} />
   ));
 }

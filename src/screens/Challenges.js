@@ -5,7 +5,7 @@ import { useStore } from '../lib/store';
 import { T, H1, H2, Card, Divider, Label, Button, Confirm } from '../components/ui';
 import { diffDays, fmtDate, hijriText, todayKey } from '../lib/dates';
 import { BUILT_IN_CHALLENGES, challengeDates, loadRemoteChallenges } from '../data/challenges';
-import { catalogItem } from '../data/catalog';
+import { catalogItem, fillAmount } from '../data/catalog';
 import { goalScore } from '../lib/stats';
 
 export default function Challenges() {
@@ -21,7 +21,7 @@ export default function Challenges() {
   const upcoming = all.filter((ch) => ch.upcoming).sort((a, b) => (challengeDates(a, today, state.hijriAdjust).start < challengeDates(b, today, state.hijriAdjust).start ? -1 : 1));
 
   const goalNames = (ch) => ch.goals.map((g) => {
-    if (typeof g === 'string') { const c = catalogItem(g); return c ? (lang === 'ar' ? c.ar : c.en) : g; }
+    if (typeof g === 'string') { const c = catalogItem(g); return c ? fillAmount(lang === 'ar' ? c.ar : c.en, c.target) : g; }
     return lang === 'ar' ? g.ar : g.en;
   }).join(lang === 'ar' ? '، ' : ', ');
 

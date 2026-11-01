@@ -4,7 +4,9 @@
 export const CATALOG = [
   { id: 'mosque', pack: 'muslim', freq: 'daily', en: 'At least one prayer in the mosque', ar: 'صلاة واحدة على الأقل في المسجد', enShort: 'Prayer in the mosque', arShort: 'صلاة في المسجد' },
   { id: 'fajr_on_time', pack: 'muslim', freq: 'daily', en: 'Fajr on time', ar: 'صلاة الفجر في وقتها' },
-  { id: 'quran', pack: 'muslim', freq: 'daily', target: '¼', unitEn: 'hizb of Quran', unitAr: 'حزب من القرآن', en: 'Read Quran', ar: 'قراءة القرآن' },
+  // the amount is part of the name ({n} = the goal's amount, ¼ by default)
+  { id: 'quran', pack: 'muslim', freq: 'daily', target: '¼', unitEn: 'hizb of Quran', unitAr: 'حزب من القرآن', amountInName: true,
+    en: 'Read {n} hizb of Quran', ar: 'قراءة {n} حزب من القرآن', enShort: 'Read {n} hizb', arShort: 'قراءة {n} حزب' },
   { id: 'adhkar_morning', pack: 'muslim', freq: 'daily', en: 'Morning adhkar', ar: 'أذكار الصباح' },
   { id: 'adhkar_evening', pack: 'muslim', freq: 'daily', en: 'Evening adhkar', ar: 'أذكار المساء' },
   // Muslim 597: subḥānAllāh 33, al-ḥamdu lillāh 33, Allāhu akbar 33, and lā ilāha illā-llāh… to complete the hundred
@@ -29,6 +31,10 @@ export const CATALOG = [
   { id: 'no_sugar', pack: 'life', hidden: true, freq: 'daily', en: 'No sugar', ar: 'بدون سكر' },
   { id: 'witr', pack: 'muslim', hidden: true, freq: 'daily', en: 'Witr', ar: 'صلاة الوتر' },
 ];
+
+export function fillAmount(text, n) {
+  return text ? text.split('{n}').join(n || '¼') : text;
+}
 
 export function catalogItem(id) {
   return CATALOG.find((c) => c.id === id);
