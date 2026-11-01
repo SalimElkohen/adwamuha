@@ -8,7 +8,7 @@ import { SET_IDS, defaultName } from '../lib/sets';
 import Logo from '../components/Logo';
 import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
 import { todayKey } from '../lib/dates';
-import { goalDetail } from '../i18n';
+import { goalDetail, goalShort } from '../i18n';
 
 export default function Onboarding() {
   const { state, actions, t } = useStore();
@@ -32,7 +32,11 @@ export default function Onboarding() {
       ...active.flatMap((id) => picked[id].map((c) => goalFromCatalog(catalogItem(c), { start: period.start, setId: id }))),
       ...custom.map((g) => ({ ...g, start: period.start })),
     ];
-    actions.finishOnboarding({ lang, sets, goals, period, hijriAdjust: adj, reminders: { list: remList } });
+    // reminders linked to suggested goals point at 'cat:<id>' until the goals exist
+    const byCat = {};
+    goals.forEach((g) => { if (g.catalogId) byCat['cat:' + g.catalogId] = g.id; });
+    const list = remList.map((r) => ({ ...r, goalIds: (r.goalIds || []).map((x) => byCat[x] || x).filter((x) => goals.some((g) => g.id === x)) }));
+    actions.finishOnboarding({ lang, sets, goals, period, hijriAdjust: adj, reminders: { list } });
   };
 
   const footer = (canNext, onNext, nextLabel) => (
@@ -163,7 +167,11 @@ export default function Onboarding() {
         <H1>{t('remindersTitle')}</H1>
         <T style={{ color: C.muted }}>{t('remindersHint')}</T>
         <Card style={{ paddingHorizontal: 16, paddingVertical: 2 }}>
-          <ReminderList list={remList} onChange={setRemList} />
+          <ReminderList list={remList} onChange={setRemList}
+            goals={[
+              ...SET_IDS.flatMap((sid) => picked[sid].map((c) => ({ id: 'cat:' + c, name: goalShort({ catalogId: c, target: (catalogItem(c) || {}).target }, lang, catalogItem) }))),
+              ...custom.map((g) => ({ id: g.id, name: g.name })),
+            ]} />
         </Card>
       </ScrollView>
       {footer(true, finish, t('finish'))}

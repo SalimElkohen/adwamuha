@@ -1,6 +1,8 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { HADITH } from '../data/hadith';
+import { catalogItem } from '../data/catalog';
+import { goalShort } from '../i18n';
 
 // Show reminders even when the app is open.
 try {
@@ -49,7 +51,12 @@ export async function scheduleReminders(state, t) {
       const time = parseTime(x.time, { hour: 5, minute: 0 });
       const am = time.hour < 12;
       const h = pick(am ? 'morning' : 'evening', i);
-      return { title: t(am ? 'notifMorningTitle' : 'notifEveningTitle'), body: (lang === 'ar' ? h.ar : h.en) + ' (' + (lang === 'ar' ? h.refAr : h.refEn) + ')', time };
+      // a named reminder uses its name; linked goals are listed before the hadith
+      const names = (x.goalIds || []).map((id) => state.goals.find((g) => g.id === id)).filter((g) => g && !g.archived).map((g) => goalShort(g, lang, catalogItem));
+      const title = x.label || (names.length ? names.join(' · ') : t(am ? 'notifMorningTitle' : 'notifEveningTitle'));
+      const hadith = (lang === 'ar' ? h.ar : h.en) + ' (' + (lang === 'ar' ? h.refAr : h.refEn) + ')';
+      const body = x.label && names.length ? names.join(' · ') + '\n' + hadith : hadith;
+      return { title, body, time };
     });
     for (const j of jobs) {
       await Notifications.scheduleNotificationAsync({

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
-import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateField, Sheet, Radio, RadioList, TimePickerSheet } from './ui';
+import { T, H2, Label, Button, Chip, Card, Divider, Segmented, Stepper, Field, DateField, Sheet, Radio, RadioList, TimePickerSheet, ModalSheet, PickerColumn } from './ui';
 import { setName as setTitle } from '../lib/sets';
 import { goalDays } from '../lib/stats';
 import { addDays, dayBeforeRamadan, diffDays, todayKey, fmtDate, hijriText, nextHijri, HIJRI_MONTHS } from '../lib/dates';
@@ -299,45 +299,97 @@ export function CatalogSheet({ onClose, onAdd, setId }) {
   );
 }
 
-// ---- Reminders: any number, each at its own time (none by default)
-export function ReminderList({ list, onChange }) {
+// ---- Reminders: any number, each at its own time (none by default).
+// A reminder can have a name and be linked to one or several goals.
+// goals: [{ id, name }] the goals that can be linked
+export function ReminderList({ list, onChange, goals = [] }) {
   const { t } = useStore();
   const [editing, setEditing] = useState(null); // reminder id, or 'new'
   const sorted = [...list].sort((a, b) => (a.time < b.time ? -1 : 1));
   const cur = editing && editing !== 'new' ? list.find((r) => r.id === editing) : null;
-  const save = (time) => {
-    if (editing === 'new') onChange([...list, { id: 'r_' + Date.now().toString(36), time, on: true }]);
-    else onChange(list.map((r) => (r.id === editing ? { ...r, time } : r)));
+  const nameOf = (id) => (goals.find((g) => g.id === id) || {}).name;
+  const save = (r) => {
+    if (editing === 'new') onChange([...list, { ...r, id: 'r_' + Date.now().toString(36), on: true }]);
+    else onChange(list.map((x) => (x.id === editing ? { ...x, ...r } : x)));
     setEditing(null);
   };
   return (
     <View>
       {!sorted.length ? <T style={{ color: C.faint, paddingVertical: 12 }}>{t('noReminders')}</T> : null}
-      {sorted.map((r, i) => (
-        <View key={r.id}>
-          {i > 0 ? <Divider /> : null}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
-            <Pressable onPress={() => setEditing(r.id)} accessibilityRole="button" style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.serif, fontSize: 26, lineHeight: 34, color: r.on ? C.ink : C.faint, fontVariant: ['tabular-nums'] }}>{r.time}</Text>
-              <T style={{ fontSize: 12, color: C.faint }}>{t(+r.time.slice(0, 2) < 12 ? 'morning' : 'evening')} · {t('tapToChange')}</T>
-            </Pressable>
-            <Pressable onPress={() => onChange(list.map((x) => (x.id === r.id ? { ...x, on: !x.on } : x)))} accessibilityRole="switch" accessibilityState={{ checked: r.on }}
-              style={{ width: 50, height: 30, borderRadius: 15, backgroundColor: r.on ? C.accent : C.empty, padding: 3, alignItems: r.on ? 'flex-end' : 'flex-start', direction: 'ltr' }}>
-              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: r.on ? C.onAccent : C.muted }} />
-            </Pressable>
-            <Pressable onPress={() => onChange(list.filter((x) => x.id !== r.id))} accessibilityLabel={t('delete')} hitSlop={8}
-              style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: C.faint, fontSize: 12 }}>✕</Text>
-            </Pressable>
+      {sorted.map((r, i) => {
+        const linked = (r.goalIds || []).map(nameOf).filter(Boolean);
+        const sub = [r.label, linked.join(' · ')].filter(Boolean).join(' — ') || t(+r.time.slice(0, 2) < 12 ? 'morning' : 'evening');
+        return (
+          <View key={r.id}>
+            {i > 0 ? <Divider /> : null}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
+              <Pressable onPress={() => setEditing(r.id)} accessibilityRole="button" style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.serif, fontSize: 26, lineHeight: 34, color: r.on ? C.ink : C.faint, fontVariant: ['tabular-nums'] }}>{r.time}</Text>
+                <T numberOfLines={2} style={{ fontSize: 12, lineHeight: 16, color: r.label || linked.length ? C.gold : C.faint }}>{sub}</T>
+              </Pressable>
+              <Pressable onPress={() => onChange(list.map((x) => (x.id === r.id ? { ...x, on: !x.on } : x)))} accessibilityRole="switch" accessibilityState={{ checked: r.on }}
+                style={{ width: 50, height: 30, borderRadius: 15, backgroundColor: r.on ? C.accent : C.empty, padding: 3, alignItems: r.on ? 'flex-end' : 'flex-start', direction: 'ltr' }}>
+                <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: r.on ? C.onAccent : C.muted }} />
+              </Pressable>
+              <Pressable onPress={() => onChange(list.filter((x) => x.id !== r.id))} accessibilityLabel={t('delete')} hitSlop={8}
+                style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: C.faint, fontSize: 12 }}>✕</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
       <Divider />
       <Pressable onPress={() => setEditing('new')} accessibilityRole="button" style={{ paddingVertical: 14, alignItems: 'center' }}>
         <Text style={{ color: C.gold, fontWeight: '600', fontSize: 15 }}>{t('addReminder')}</Text>
       </Pressable>
-      <TimePickerSheet visible={!!editing} value={cur ? cur.time : list.length ? '18:00' : '05:00'} title={t('reminderTime')}
-        onClose={() => setEditing(null)} onDone={save} />
+      <ReminderSheet visible={!!editing} value={cur || { time: list.length ? '18:00' : '05:00', label: '', goalIds: [] }} goals={goals}
+        onClose={() => setEditing(null)} onSave={save} />
     </View>
+  );
+}
+
+// time, optional name and linked goals in one panel
+function ReminderSheet({ visible, value, goals, onClose, onSave }) {
+  const { t } = useStore();
+  const p2 = (n) => (n < 10 ? '0' + n : '' + n);
+  const [h, setH] = useState(5);
+  const [m, setM] = useState(0);
+  const [label, setLabel] = useState('');
+  const [ids, setIds] = useState([]);
+  useEffect(() => {
+    if (!visible) return;
+    const [a, b] = (value.time || '05:00').split(':').map(Number);
+    setH(a); setM(b - (b % 5)); setLabel(value.label || ''); setIds(value.goalIds || []);
+  }, [visible]);
+  const hours = Array.from({ length: 24 }, (_, k) => ({ value: k, label: p2(k) }));
+  const mins = Array.from({ length: 12 }, (_, k) => ({ value: k * 5, label: p2(k * 5) }));
+  return (
+    <ModalSheet visible={visible} onClose={onClose}>
+      <ScrollView style={{ maxHeight: 620 }} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }} keyboardShouldPersistTaps="handled">
+        <Label style={{ marginBottom: 0 }}>{t('reminderTime')}</Label>
+        <Text style={{ fontFamily: F.serif, fontSize: 36, lineHeight: 46, color: C.ink, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{p2(h)}:{p2(m)}</Text>
+        <View style={{ flexDirection: 'row', gap: 8, direction: 'ltr' }}>
+          <PickerColumn items={hours} value={h} onChange={setH} />
+          <PickerColumn items={mins} value={m} onChange={setM} />
+        </View>
+        <Label style={{ marginBottom: 0, marginTop: 4 }}>{t('reminderName')}</Label>
+        <Field value={label} onChangeText={setLabel} placeholder={t('reminderNamePh')} />
+        {goals.length ? (
+          <View style={{ gap: 8 }}>
+            <Label style={{ marginBottom: 0, marginTop: 4 }}>{t('reminderGoals')}</Label>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
+              {goals.map((g) => (
+                <Chip key={g.id} label={g.name} active={ids.includes(g.id)} onPress={() => setIds((x) => (x.includes(g.id) ? x.filter((y) => y !== g.id) : [...x, g.id]))} />
+              ))}
+            </View>
+          </View>
+        ) : null}
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
+          <Button title={t('cancel')} kind="secondary" onPress={onClose} style={{ flex: 1 }} />
+          <Button title={t('save')} onPress={() => onSave({ time: p2(h) + ':' + p2(m), label: label.trim(), goalIds: ids })} style={{ flex: 1 }} />
+        </View>
+      </ScrollView>
+    </ModalSheet>
   );
 }

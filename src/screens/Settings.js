@@ -6,7 +6,7 @@ import { T, H1, H2, Card, Divider, Label, Button, Segmented, RadioList, Toggle, 
 import { GoalEditor, CatalogSheet, PeriodPicker, ReminderList } from '../components/editors';
 import { diffDays, fmtDate, hijriText } from '../lib/dates';
 import { catalogItem } from '../data/catalog';
-import { goalTitle, goalDetail } from '../i18n';
+import { goalShort, goalTitle, goalDetail } from '../i18n';
 import { MAX_SETS, setName } from '../lib/sets';
 
 export default function Settings() {
@@ -85,7 +85,8 @@ export default function Settings() {
 
         <Card style={{ paddingVertical: 6 }}>
           <Label style={{ marginTop: 10, marginBottom: 0 }}>{t('reminders')}</Label>
-          <ReminderList list={state.reminders.list || []} onChange={(list) => actions.setReminders({ list })} />
+          <ReminderList list={state.reminders.list || []} onChange={(list) => actions.setReminders({ list })}
+            goals={state.goals.filter((g) => !g.archived).map((g) => ({ id: g.id, name: goalShort(g, lang, catalogItem) }))} />
         </Card>
 
         <Card style={{ gap: 6 }}>
