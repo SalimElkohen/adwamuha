@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { C, F } from '../theme';
 import { useStore } from '../lib/store';
 import { T, H1, Label, Button, Card, Divider, Segmented, RadioList, Toggle } from '../components/ui';
-import { CatalogRows, GoalEditor, PeriodPicker, ReminderList } from '../components/editors';
+import { CatalogTiles, GoalEditor, GoalTile, PeriodPicker, ReminderList, TileGrid } from '../components/editors';
 import { SET_IDS, defaultName } from '../lib/sets';
 import Logo from '../components/Logo';
 import { CATALOG, catalogItem, goalFromCatalog } from '../data/catalog';
@@ -83,7 +83,7 @@ export default function Onboarding() {
       const mine = custom.filter((g) => g.setId === id);
       return (
         <View key={id}>
-          <Card style={{ paddingVertical: 4, paddingHorizontal: 16, borderColor: on ? C.accent : C.line }}>
+          <Card style={{ paddingTop: 4, paddingBottom: 6, paddingHorizontal: 12, borderColor: on ? C.accent : C.line }}>
             <View style={{ paddingTop: 12, paddingBottom: 12, gap: 6 }}>
               <T style={{ fontFamily: F.serif, fontSize: 22, lineHeight: 32, color: on ? C.ink : C.muted }}>{defaultName(id, t)}</T>
               {(() => {
@@ -100,24 +100,14 @@ export default function Onboarding() {
               })()}
               {!on ? <T style={{ fontSize: 12, color: C.faint }}>{t('setOff')}</T> : null}
             </View>
-            <Divider />
-            <CatalogRows items={items} selected={picked[id]} onToggle={(c) => toggle(id, c)} />
-            {mine.map((g) => (
-              <View key={g.id}>
-                <Divider />
-                <Pressable onPress={() => setCustom((c) => c.filter((x) => x.id !== g.id))} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 13 }}>
-                  <View style={{ flex: 1 }}>
-                    <T style={{ fontWeight: '600' }}>{g.name}</T>
-                    <T style={{ fontSize: 13, color: C.faint, marginTop: 1 }}>{goalDetail(g, lang, catalogItem, t)}</T>
-                  </View>
-                  <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: C.onAccent, fontWeight: '800', fontSize: 13 }}>✓</Text>
-                  </View>
-                </Pressable>
-              </View>
-            ))}
-            <Divider />
-            <Pressable onPress={() => setEditing(id)} accessibilityRole="button" style={{ paddingVertical: 14, alignItems: 'center' }}>
+            <TileGrid>
+              <CatalogTiles items={items} selected={picked[id]} onToggle={(c) => toggle(id, c)} />
+              {mine.map((g) => (
+                <GoalTile key={g.id} rtl={rtl} on onPress={() => setCustom((c) => c.filter((x) => x.id !== g.id))}
+                  title={g.name} detail={goalDetail(g, lang, catalogItem, t)} />
+              ))}
+            </TileGrid>
+            <Pressable onPress={() => setEditing(id)} accessibilityRole="button" style={{ paddingTop: 14, paddingBottom: 8, alignItems: 'center' }}>
               <Text style={{ color: C.gold, fontWeight: '600', fontSize: 15 }}>{t('addOwn')}</Text>
             </Pressable>
           </Card>

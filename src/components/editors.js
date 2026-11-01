@@ -208,6 +208,51 @@ export function CatalogRows({ items, selected, onToggle }) {
   });
 }
 
+// ---- Goal tiles: 3 per row. Title in gold (English bold in English, Arabic calligraphy in Arabic),
+// white text below (the Arabic name in English mode, then amount and frequency). A chosen tile has a gold border and ✓.
+export function GoalTile({ title, second, detail, on, onPress, rtl }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="checkbox" accessibilityState={{ checked: !!on }}
+      style={{ width: '31.5%', borderRadius: 14, paddingVertical: 9, paddingHorizontal: 5, alignItems: 'center', borderWidth: 1,
+        borderColor: on ? C.accent : 'rgba(227,194,119,0.22)', backgroundColor: on ? C.accentSoft : 'rgba(0,0,0,0.08)' }}>
+      {rtl ? (
+        <Text style={{ fontFamily: F.serif, fontSize: 17, lineHeight: 26, color: C.gold, textAlign: 'center' }}>{title}</Text>
+      ) : (
+        <Text style={{ fontSize: 12.5, lineHeight: 16, fontWeight: '700', color: C.gold, textAlign: 'center' }}>{title}</Text>
+      )}
+      {second ? <Text style={{ fontFamily: F.serifRegular, fontSize: 13.5, lineHeight: 21, color: C.ink, textAlign: 'center', marginTop: 1 }}>{second}</Text> : null}
+      {detail ? <Text style={{ fontSize: rtl ? 10.5 : 9.5, lineHeight: 13, color: 'rgba(248,243,232,0.78)', textAlign: 'center', marginTop: 2 }}>{detail}</Text> : null}
+      {on ? (
+        <View style={[{ position: 'absolute', top: -6, width: 18, height: 18, borderRadius: 9, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }, rtl ? { left: -5 } : { right: -5 }]}>
+          <Text style={{ color: C.onAccent, fontSize: 10, fontWeight: '800' }}>✓</Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
+export function TileGrid({ children }) {
+  return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7, paddingTop: 6 }}>{children}</View>;
+}
+
+export function catalogDetail(c, lang, t) {
+  const unit = lang === 'ar' ? c.unitAr : c.unitEn;
+  // keep number groups like 33 · 33 · 33 + 1 in reading order inside Arabic text
+  const tg = c.target && lang === 'ar' && /[·+]/.test(c.target) ? '\u2066' + c.target + '\u2069' : c.target;
+  return [tg ? tg + (unit ? ' ' + unit : '') : null, c.days ? t('monOrThu') : c.weekInUnit ? null : c.freq === 'weekly' ? t('perWeek', { n: c.perWeek }) : t('daily')].filter(Boolean).join(' · ');
+}
+
+export function CatalogTiles({ items, selected, onToggle }) {
+  const { state, t } = useStore();
+  const lang = state.lang, rtl = lang === 'ar';
+  return items.map((c) => (
+    <GoalTile key={c.id} rtl={rtl} on={selected.includes(c.id)} onPress={() => onToggle(c.id)}
+      title={rtl ? c.arShort || c.ar : c.enShort || c.en}
+      second={rtl ? null : c.arShort || c.ar}
+      detail={catalogDetail(c, lang, t)} />
+  ));
+}
+
 // ---- Catalog list grouped by pack (used when adding goals from Settings)
 export function CatalogList({ selected, onToggle, exclude = [] }) {
   const { t } = useStore();
@@ -223,8 +268,8 @@ export function CatalogList({ selected, onToggle, exclude = [] }) {
         return (
           <View key={g.key}>
             <Label>{g.title}</Label>
-            <Card style={{ paddingVertical: 4, paddingHorizontal: 16 }}>
-              <CatalogRows items={items} selected={selected} onToggle={onToggle} />
+            <Card style={{ padding: 12 }}>
+              <TileGrid><CatalogTiles items={items} selected={selected} onToggle={onToggle} /></TileGrid>
             </Card>
           </View>
         );
