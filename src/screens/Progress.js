@@ -75,9 +75,6 @@ function Grid({ goals }) {
             <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '600', color: C.ink, textAlign: rtl ? 'right' : 'left', writingDirection: rtl ? 'rtl' : 'ltr', paddingRight: 8 }}>{r.name}</Text>
           </View>
         ))}
-        <View style={{ height: 22, marginTop: 6, justifyContent: 'center' }}>
-          <Text style={{ fontSize: 12, color: C.muted, textAlign: rtl ? 'right' : 'left', paddingRight: 8 }}>{t('allDaily')}</Text>
-        </View>
       </View>
       <ScrollView horizontal ref={scroller} showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
         <View>
@@ -103,16 +100,6 @@ function Grid({ goals }) {
               })}
             </View>
           ))}
-          <View style={{ flexDirection: 'row', height: 22, marginTop: 6 }}>
-            {days.map((k) => {
-              const daily = goals.filter((g) => g.freq !== 'weekly' && isActiveOn(g, state, k) && !excusedFor(state, g, k));
-              const f = daily.length ? daily.filter((g) => mark(state, g.id, k) === 'd').length / daily.length : null;
-              const fut = k > today;
-              return <View key={k} style={{ width: CELL, height: 22, marginRight: GAP, borderRadius: 3, backgroundColor: f == null || fut ? 'transparent' : C.empty, overflow: 'hidden', justifyContent: 'flex-end' }}>
-                {f && !fut ? <View style={{ height: 22 * f, backgroundColor: C.accent, opacity: 0.85 }} /> : null}
-              </View>;
-            })}
-          </View>
         </View>
       </ScrollView>
     </View>
@@ -194,12 +181,6 @@ export default function Progress() {
             <T style={{ flex: 1, fontSize: 13, lineHeight: 18 }}>{t(l)}</T>
           </View>
         ))}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <View style={{ width: CELL, height: 22, borderRadius: 3, backgroundColor: C.empty, overflow: 'hidden', justifyContent: 'flex-end' }}>
-            <View style={{ height: 13, backgroundColor: C.accent, opacity: 0.85 }} />
-          </View>
-          <T style={{ flex: 1, fontSize: 13, lineHeight: 18 }}>{t('legendBars')}</T>
-        </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Text style={{ width: CELL, textAlign: 'center', fontSize: 11, color: C.gold }}>▼</Text>
           <T style={{ flex: 1, fontSize: 13, lineHeight: 18 }}>{t('legendToday')}</T>
