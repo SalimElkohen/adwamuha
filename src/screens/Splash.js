@@ -246,7 +246,7 @@ export default function Splash({ onDone }) {
   }
 
   return (
-    <Pressable onPress={onDone} accessibilityLabel={tr('tapToContinue')} style={{ flex: 1, backgroundColor: M.ivory }}>
+    <Pressable onPress={canTap ? onDone : undefined} disabled={!canTap} accessibilityLabel={tr('tapToContinue')} style={{ flex: 1, backgroundColor: M.ivory }}>
       <View style={{ flex: 1 }} onLayout={(e) => setSize(e.nativeEvent.layout)}>{body}</View>
     </Pressable>
   );
