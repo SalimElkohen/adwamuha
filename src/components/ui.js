@@ -46,6 +46,8 @@ export function Button({ title, onPress, kind = 'primary', disabled, style, smal
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={!!disabled}
       onPress={disabled ? undefined : onPress}
       style={({ pressed }) => [
         { backgroundColor: bg, borderRadius: R.pill, minHeight: small ? 38 : 52, paddingHorizontal: small ? 14 : 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: border, opacity: disabled ? 0.4 : pressed ? 0.8 : 1 },
